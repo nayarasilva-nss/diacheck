@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
+import { RegistrarSW } from "./RegistrarSW";
 
 const schibsted = Schibsted_Grotesk({
   subsets: ["latin"],
@@ -11,6 +12,11 @@ const schibsted = Schibsted_Grotesk({
 export const metadata: Metadata = {
   title: "DiaCheck",
   description: "Tudo em ordem, do começo ao fim do dia.",
+  appleWebApp: { capable: true, title: "DiaCheck", statusBarStyle: "black-translucent" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0d1b2a",
 };
 
 export default function RootLayout({
@@ -28,7 +34,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <RegistrarSW />
+      </body>
     </html>
   );
 }
