@@ -1,7 +1,12 @@
+import { isNotNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
 import { getPendenciasDoDia } from "@/lib/data/painel";
 import { enviarPushUmaVez } from "@/lib/push";
+import { rotinasPessoais } from "@/lib/db/schema";
+import { getMinhasRotinas } from "@/lib/data/rotinas";
+import { minutesIntoChecklistDay } from "@/lib/checklist-scoring";
+import { checklistDayISO } from "@/lib/date-utils";
 
 /**
  * Lembretes de checklist por push, chamados a cada ~10 minutos por um
@@ -31,5 +36,23 @@ export async function GET(req: Request) {
       }
     }
   }
-  return Response.json({ ok: true, prazo, atraso });
+
+  // Rotinas pessoais com lembrete: avisa na hora marcada (até 2 h depois), se ainda houver item por fazer.
+  let rotinas = 0;
+  const comLembrete = await db.select({ userId: rotinasPessoais.userId }).from(rotinasPessoais).where(isNotNull(rotinasPessoais.lembreteHora));
+  const hoje = checklistDayISO();
+  const agora = minutesIntoChecklistDay(new Date());
+  for (const userId of new Set(comLembrete.map((r) => r.userId))) {
+    for (const r of await getMinhasRotinas(userId)) {
+      if (!r.aplicaHoje || !r.lembreteHora || r.itens.every((i) => i.feito)) continue;
+      const [h, m] = r.lembreteHora.split(":").map(Number);
+      const hora = h < 2 ? h * 60 + m + 24 * 60 : h * 60 + m; // vira o dia às 02:00
+      const passou = agora - hora;
+      if (passou >= 0 && passou <= ATRASO_MAXIMO) {
+        const faltam = r.itens.filter((i) => !i.feito).length;
+        if (await enviarPushUmaVez(userId, `rotina:${r.id}:${hoje}`, { titulo: r.nome, corpo: `Faltam ${faltam} ${faltam === 1 ? "item" : "itens"} da sua rotina.`, url: "/rotinas", tag: `rotina-${r.id}` })) rotinas++;
+      }
+    }
+  }
+  return Response.json({ ok: true, prazo, atraso, rotinas });
 }

@@ -19,6 +19,7 @@ import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
 import { tiposPermitidos } from "@/lib/auth/requisicoes";
 import { getRecebimentosComDiferenca } from "@/lib/data/requisicoes";
 import { getAtrasosHoje } from "@/lib/data/painel";
+import { getMinhasRotinas } from "@/lib/data/rotinas";
 import { getUnits, resolveUnitScope } from "@/lib/data/units";
 import { greeting, todayISO, todayShortLabel } from "@/lib/date-utils";
 import { UnitFilter } from "../UnitFilter";
@@ -75,6 +76,7 @@ export default async function HojePage({
     isGestor ? getRecebimentosComDiferenca(user.organizationId!) : Promise.resolve([]),
   ]);
   const unitName = units.find((u) => u.id === user.unitId)?.name ?? null;
+  const rotinasHoje = isRh ? [] : (await getMinhasRotinas(user.id)).filter((r) => r.aplicaHoje);
 
   const [pendencias, painelStats, ranking, filletingSummary, restoIngestaSummary, missingChecklist] =
     await Promise.all([
@@ -239,6 +241,26 @@ export default async function HojePage({
                           </div>
                         </div>
                       ) : null}
+
+                      {rotinasHoje.length > 0 && (
+                        <div className="today-card">
+                          <div className="today-card-header">
+                            <div className="today-card-title">Minhas rotinas</div>
+                            <Link href="/rotinas" className="today-card-link">Abrir</Link>
+                          </div>
+                          <div className="turno-lista">
+                            {rotinasHoje.map((r) => {
+                              const feitos = r.itens.filter((i) => i.feito).length;
+                              return (
+                                <Link key={r.id} href="/rotinas" className="turno-linha">
+                                  <span>{r.nome}</span>
+                                  <span className={feitos === r.itens.length ? "rotina-chip ok" : "rotina-chip"}>{feitos}/{r.itens.length}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
 
                       <div className="today-card">
                         <div className="today-card-header">

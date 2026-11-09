@@ -874,3 +874,42 @@ export const pushEnvios = pgTable(
   },
   (table) => [uniqueIndex("push_envios_user_chave_idx").on(table.userId, table.chave)],
 );
+
+// Rotinas pessoais: listas que cada pessoa monta para si (privadas), com dias da
+// semana e, se quiser, um horário de lembrete por push.
+export const rotinasPessoais = pgTable("rotinas_pessoais", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  nome: varchar("nome", { length: 120 }).notNull(),
+  // dias da semana em que vale (0 = domingo … 6 = sábado); vazio = todos os dias
+  dias: integer("dias").array().notNull().default(sql`'{}'::integer[]`),
+  lembreteHora: varchar("lembrete_hora", { length: 5 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const rotinaItens = pgTable("rotina_itens", {
+  id: serial("id").primaryKey(),
+  rotinaId: integer("rotina_id")
+    .notNull()
+    .references(() => rotinasPessoais.id, { onDelete: "cascade" }),
+  texto: varchar("texto", { length: 200 }).notNull(),
+  posicao: integer("posicao").notNull().default(0),
+});
+
+export const rotinaMarcas = pgTable(
+  "rotina_marcas",
+  {
+    id: serial("id").primaryKey(),
+    itemId: integer("item_id")
+      .notNull()
+      .references(() => rotinaItens.id, { onDelete: "cascade" }),
+    date: date("date", { mode: "string" }).notNull(),
+    doneAt: timestamp("done_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("rotina_marcas_item_date_idx").on(table.itemId, table.date)],
+);
