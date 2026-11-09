@@ -3016,3 +3016,7 @@ button {
 .rotina-dias label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
 .rotina-dias input { width: auto; min-height: 0; accent-color: var(--kenkyo-red); }
 .rotina-ok { color: var(--success-text); font-size: 14px; }
+
+/* Resumo do dia */
+.resumo-linha { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border-row); font-size: 14.5px; color: var(--text); }
+.resumo-linha span:first-child { min-width: 0; }

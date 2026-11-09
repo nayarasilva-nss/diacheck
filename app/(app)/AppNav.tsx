@@ -53,6 +53,7 @@ function buildGroups(
         { href: "/checklist", label: "Checklists" },
         { href: "/diario-de-bordo", label: "Diário de bordo" },
         { href: "/rotinas", label: "Minhas rotinas" },
+        { href: "/resumo-do-dia", label: "Resumo do dia" },
       ],
     },
     {
@@ -105,6 +106,7 @@ function buildGroups(
 
 const DESCRICOES: Record<string, string> = {
   "/rotinas": "Listas só suas, com lembrete",
+  "/resumo-do-dia": "O que foi feito e o que segue para amanhã",
   "/requisicoes": "Pedidos de estoque",
   "/solicitacoes": "Itens avulsos, com aprovação",
   "/estoque": "Saldo e alertas da unidade",

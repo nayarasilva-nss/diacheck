@@ -242,6 +242,8 @@ export default async function HojePage({
                         </div>
                       ) : null}
 
+                      <Link href="/resumo-do-dia" className="today-card-link" style={{ display: "block", margin: "0 0 12px" }}>Ver o resumo do dia</Link>
+
                       {rotinasHoje.length > 0 && (
                         <div className="today-card">
                           <div className="today-card-header">
