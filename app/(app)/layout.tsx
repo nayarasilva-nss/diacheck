@@ -91,6 +91,7 @@ export default async function AppLayout({
         userName={user.name}
         profile={user.profile}
         jobFunctionName={user.jobFunctionName}
+        vapidKey={process.env.VAPID_PUBLIC_KEY}
         orgName={user.organizationName ?? "DiaCheck"}
         orgLogoUrl={user.organizationLogoUrl ?? (user.organizationSlug === "kenkyo" ? "/kenkyo-logo.png" : "/diacheck-icon.png")}
         canCreateAnomaly={user.profile !== "rh"}

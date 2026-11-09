@@ -193,6 +193,7 @@ export function AppNav({
   jobFunctionName,
   orgName,
   orgLogoUrl,
+  vapidKey,
   canCreateAnomaly,
   canSubmitFilleting,
   canSubmitRestoIngesta,
@@ -214,6 +215,7 @@ export function AppNav({
   jobFunctionName: string | null;
   orgName: string;
   orgLogoUrl: string;
+  vapidKey?: string;
   canCreateAnomaly: boolean;
   canSubmitFilleting: boolean;
   canSubmitRestoIngesta: boolean;
@@ -337,7 +339,7 @@ export function AppNav({
           })}
         </nav>
 
-        <AvisosPush />
+        <AvisosPush chave={vapidKey} />
         <ThemeToggle className="app-nav-theme" />
         <div className="app-nav-footer">
           <div className="app-nav-avatar">{initials(userName)}</div>
@@ -413,7 +415,7 @@ export function AppNav({
               <div className="sheet-label">Tema</div>
               <ThemeSegmented />
               <div className="sheet-label">Avisos</div>
-              <AvisosPush />
+              <AvisosPush chave={vapidKey} />
               {contexto && (
                 <>
                   <div className="sheet-label">Hoje</div>

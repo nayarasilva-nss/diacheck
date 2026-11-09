@@ -12,13 +12,13 @@ function chaveParaBytes(base64: string) {
 }
 
 /** Liga ou desliga os avisos (push) neste aparelho. */
-export function AvisosPush() {
+export function AvisosPush({ chave }: { chave?: string }) {
   const [estado, setEstado] = useState<Estado>("carregando");
   const [ocupado, setOcupado] = useState(false);
 
   useEffect(() => {
     (async () => {
-      if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) return setEstado("sem-suporte");
+      if (!chave) return setEstado("sem-suporte");
       const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
       const instalado = window.matchMedia("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
       if (ios && !instalado) return setEstado("iphone-instalar");
@@ -32,7 +32,7 @@ export function AvisosPush() {
         setEstado("sem-suporte");
       }
     })();
-  }, []);
+  }, [chave]);
 
   async function ligar() {
     setOcupado(true);
@@ -42,7 +42,7 @@ export function AvisosPush() {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: chaveParaBytes(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""),
+        applicationServerKey: chaveParaBytes(chave ?? ""),
       });
       const j = sub.toJSON();
       await salvarInscricaoPush({ endpoint: sub.endpoint, p256dh: j.keys?.p256dh ?? "", auth: j.keys?.auth ?? "", userAgent: navigator.userAgent });
