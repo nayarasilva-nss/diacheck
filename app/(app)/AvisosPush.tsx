@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { removerInscricaoPush, salvarInscricaoPush } from "@/lib/actions/push";
+import { enviarAvisoDeTeste, removerInscricaoPush, salvarInscricaoPush } from "@/lib/actions/push";
 
 type Estado = "carregando" | "sem-suporte" | "iphone-instalar" | "bloqueado" | "desligado" | "ligado";
 
@@ -57,6 +57,20 @@ export function AvisosPush({ chave }: { chave?: string }) {
     }
   }
 
+  async function testar() {
+    setOcupado(true);
+    setErro(null);
+    try {
+      const r = await enviarAvisoDeTeste();
+      if (!r.configurado) setErro("Servidor sem as chaves de aviso (VAPID).");
+      else if (r.aparelhos === 0) setErro("Nenhum aparelho inscrito para você. Toque em Desativar e Ativar de novo.");
+      else if (r.enviados === 0) setErro(`Havia ${r.aparelhos} aparelho(s), mas o envio falhou.`);
+      else setErro(`Aviso de teste enviado para ${r.enviados} aparelho(s).`);
+    } finally {
+      setOcupado(false);
+    }
+  }
+
   async function desligar() {
     setOcupado(true);
     try {
@@ -82,12 +96,17 @@ export function AvisosPush({ chave }: { chave?: string }) {
       <div>
         <strong>Avisos no celular</strong>
         <small>{dica[estado] ?? "Prazo e atraso de checklists, anomalias e requisições."}</small>
-        {erro && <small style={{ color: "var(--danger-text)" }}>{erro}</small>}
+        {erro && <small style={{ color: erro.startsWith("Aviso de teste") ? "var(--success-text)" : "var(--danger-text)" }}>{erro}</small>}
       </div>
       {(estado === "desligado" || estado === "ligado") && (
-        <button type="button" className="btn btn-secondary" disabled={ocupado} onClick={estado === "ligado" ? desligar : ligar}>
-          {estado === "ligado" ? "Desativar" : "Ativar"}
-        </button>
+        <div style={{ display: "flex", gap: 6, flex: "none" }}>
+          {estado === "ligado" && (
+            <button type="button" className="btn btn-secondary" disabled={ocupado} onClick={testar}>Testar</button>
+          )}
+          <button type="button" className="btn btn-secondary" disabled={ocupado} onClick={estado === "ligado" ? desligar : ligar}>
+            {estado === "ligado" ? "Desativar" : "Ativar"}
+          </button>
+        </div>
       )}
     </div>
   );
