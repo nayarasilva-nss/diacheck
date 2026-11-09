@@ -86,7 +86,7 @@ const s = StyleSheet.create({
   sec: t(13, { ...caps(13, 0.05), marginTop: 19.5, marginBottom: 7.5, paddingLeft: 7.5, borderLeftWidth: 3 }),
   table: { borderTopWidth: BORDER, borderLeftWidth: BORDER, borderColor: LINE, marginBottom: 6 },
   tr: { flexDirection: "row" },
-  th: { flexDirection: "row", backgroundColor: INK },
+  th: { flexDirection: "row", backgroundColor: "#0d1b2a" },
   cell: { paddingVertical: 6, paddingHorizontal: 7.5, borderRightWidth: BORDER, borderBottomWidth: BORDER, borderColor: LINE },
   td: t(12.5),
   thText: t(11, { ...caps(11, 0.03), color: "#ffffff" }),
@@ -104,6 +104,9 @@ const s = StyleSheet.create({
   signText: t(12, { color: DARK, textAlign: "center" }),
   endNote: t(11, { color: FAINT, textAlign: "center", marginTop: 25.5 }),
   pageNo: { position: "absolute", bottom: 20, right: 39.69, fontSize: 7.5, color: FAINT },
+  footer: { position: "absolute", bottom: 18, left: 39.75, right: 39.75, flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: BORDER, borderColor: LINE, paddingTop: 6 },
+  footerLogo: { height: 11, objectFit: "contain" },
+  footerText: { fontSize: 7.5, color: FAINT },
 });
 
 /** Baixa uma imagem e devolve só se for JPEG ou PNG (os formatos que o
@@ -239,9 +242,14 @@ function issueColumns(
   return [crit * 0.75, peso * 0.75, sit * 0.75, obs * 0.75];
 }
 
+async function loadOrgLogo(org: { logoUrl: string | null; slug?: string | null }, origin: string) {
+  const padrao = org.slug === "kenkyo" ? "/kenkyo-logo.png" : "/diacheck-icon.png";
+  return (await loadImage(org.logoUrl ?? padrao, origin)) ?? (await loadImage(padrao, origin));
+}
+
 export async function renderAuditPdf(
   audit: Audit,
-  org: { name: string; logoUrl: string | null; brandColor: string },
+  org: { name: string; logoUrl: string | null; slug?: string | null; brandColor: string },
   /** Origem do site (ex.: https://app.exemplo.com), para achar o logo padrão em /public. */
   origin: string,
 ) {
@@ -268,8 +276,9 @@ export async function renderAuditPdf(
 
   // Imagens antes de montar o documento (até 6 downloads simultâneos).
   const photoUrls = [...new Set(issues.flatMap((a) => a.photoUrls))];
-  const [logo, photoBufs] = await Promise.all([
-    loadImage(org.logoUrl ?? "/kenkyo-logo.png", origin).then((b) => b ?? loadImage("/kenkyo-logo.png", origin)),
+  const [logo, dcLogo, photoBufs] = await Promise.all([
+    loadOrgLogo(org, origin),
+    loadImage("/diacheck-logo.png", origin),
     mapLimit(photoUrls, 6, (u) => loadImage(u, origin)),
   ]);
   const photos = new Map(photoUrls.map((u, i) => [u, photoBufs[i]]));
@@ -466,9 +475,14 @@ export async function renderAuditPdf(
               ))}
             </View>
           ))}
-          <Text style={s.endNote}>Documento gerado pelo sistema {org.name} em {generatedAt}</Text>
-
-          <Text style={s.pageNo} fixed render={({ pageNumber, totalPages }) => `${pageNumber}/${totalPages}`} />
+          <View style={s.footer} fixed>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              {/* eslint-disable-next-line jsx-a11y/alt-text -- Image do react-pdf não tem alt */}
+              {dcLogo && <Image src={dcLogo} style={s.footerLogo} />}
+              <Text style={s.footerText}>diacheck.app.br · gerado para {org.name} em {generatedAt}</Text>
+            </View>
+            <Text style={s.footerText} render={({ pageNumber, totalPages }) => `${pageNumber}/${totalPages}`} />
+          </View>
         </Page>
       </Document>
     );

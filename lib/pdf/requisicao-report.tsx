@@ -1,6 +1,6 @@
 import "server-only";
 import { Document, Image, Page, Text, View, renderToBuffer } from "@react-pdf/renderer";
-import { Row, generatedAtNow, loadImage, shared, t } from "./shared";
+import { PdfFooter, Row, generatedAtNow, loadDiaCheckLogo, loadOrgLogo, shared, t } from "./shared";
 import type { getRequisicaoWithItens } from "@/lib/data/requisicoes";
 
 type Requisicao = NonNullable<Awaited<ReturnType<typeof getRequisicaoWithItens>>>;
@@ -26,17 +26,17 @@ function fmt(d: Date | null) {
 
 export async function renderRequisicaoPdf(
   requisicao: Requisicao,
-  org: { name: string; logoUrl: string | null },
+  org: { name: string; logoUrl: string | null; slug?: string | null; brandColor?: string },
   origin: string,
 ) {
   const comRecebimento = requisicao.tipo === "externa" && requisicao.recebidoEm !== null;
   const conferidoLabel = requisicao.tipo === "interna" ? "saiu" : "entregue";
-  const logo = (await loadImage(org.logoUrl ?? "/kenkyo-logo.png", origin)) ?? (await loadImage("/kenkyo-logo.png", origin));
+  const [logo, dcLogo] = await Promise.all([loadOrgLogo(org, origin), loadDiaCheckLogo(origin)]);
 
   const pdf = await renderToBuffer(
     <Document title={`${TIPO_LABEL[requisicao.tipo] ?? "Requisição"} — ${requisicao.unitName} — ${new Date(requisicao.createdAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`} author={org.name}>
       <Page size="A4" style={shared.page}>
-        <View style={shared.head}>
+        <View style={[shared.head, org.brandColor ? { borderColor: org.brandColor } : {}]}>
           {/* eslint-disable-next-line jsx-a11y/alt-text -- Image do react-pdf não tem alt */}
           {logo && <Image src={logo} style={shared.logo} />}
           <View>
@@ -106,8 +106,7 @@ export async function renderRequisicaoPdf(
           <View style={shared.signLine}><Text style={shared.signText}>Conferido por</Text></View>
         </View>
 
-        <Text style={shared.endNote}>Documento gerado pelo sistema {org.name} em {generatedAtNow()}</Text>
-        <Text style={shared.pageNo} fixed render={({ pageNumber, totalPages }) => `${pageNumber}/${totalPages}`} />
+        <PdfFooter logo={dcLogo} orgName={org.name} geradoEm={generatedAtNow()} />
       </Page>
     </Document>,
   );

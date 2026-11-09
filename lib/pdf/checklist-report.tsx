@@ -1,6 +1,6 @@
 import "server-only";
 import { Document, Image, Page, Text, View, renderToBuffer } from "@react-pdf/renderer";
-import { Row, generatedAtNow, loadImage, shared } from "./shared";
+import { PdfFooter, Row, generatedAtNow, loadDiaCheckLogo, loadOrgLogo, shared } from "./shared";
 import type { getChecklistExportData } from "@/lib/data/checklists";
 
 type ChecklistData = NonNullable<Awaited<ReturnType<typeof getChecklistExportData>>>;
@@ -16,19 +16,19 @@ const COLS = [undefined, 90, undefined];
 
 export async function renderChecklistPdf(
   data: ChecklistData,
-  org: { name: string; logoUrl: string | null },
+  org: { name: string; logoUrl: string | null; slug?: string | null; brandColor?: string },
   origin: string,
 ) {
   const total = data.items.length;
   const done = data.items.filter((i) => i.status !== "pending").length;
   const date = new Date(`${data.date}T00:00:00`).toLocaleDateString("pt-BR");
 
-  const logo = (await loadImage(org.logoUrl ?? "/kenkyo-logo.png", origin)) ?? (await loadImage("/kenkyo-logo.png", origin));
+  const [logo, dcLogo] = await Promise.all([loadOrgLogo(org, origin), loadDiaCheckLogo(origin)]);
 
   const pdf = await renderToBuffer(
     <Document title={`${data.checklistType.name}${data.unitName ? ` — ${data.unitName}` : ""} — ${date}`} author={org.name}>
       <Page size="A4" style={shared.page}>
-        <View style={shared.head}>
+        <View style={[shared.head, org.brandColor ? { borderColor: org.brandColor } : {}]}>
           {/* eslint-disable-next-line jsx-a11y/alt-text -- Image do react-pdf não tem alt */}
           {logo && <Image src={logo} style={shared.logo} />}
           <View>
@@ -55,8 +55,7 @@ export async function renderChecklistPdf(
           ))}
         </View>
 
-        <Text style={shared.endNote}>Documento gerado pelo sistema {org.name} em {generatedAtNow()}</Text>
-        <Text style={shared.pageNo} fixed render={({ pageNumber, totalPages }) => `${pageNumber}/${totalPages}`} />
+        <PdfFooter logo={dcLogo} orgName={org.name} geradoEm={generatedAtNow()} />
       </Page>
     </Document>,
   );

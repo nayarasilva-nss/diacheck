@@ -1,6 +1,6 @@
 import "server-only";
 import path from "node:path";
-import { Font, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Font, Image, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { Style } from "@react-pdf/types";
 
 // Registro de fonte + paleta compartilhados pelos relatórios em PDF
@@ -24,8 +24,9 @@ export const INK = "#16140f";
 export const MUTED = "#65635a";
 export const FAINT = "#a19f92";
 export const LINE = "#e3e1da";
-export const BADGE_BG = "#fbe4e6";
-export const BADGE_TEXT = "#b3261e";
+export const NAVY = "#0d1b2a";
+export const BADGE_BG = "#e1f2f4";
+export const BADGE_TEXT = "#0f6672";
 const BORDER = 0.75; // 1px
 
 /** Texto de `px` pixels da página web — mesma conversão usada no
@@ -36,7 +37,7 @@ export const caps = (px: number, em: number): Style => ({ ...bold, textTransform
 
 export const shared = StyleSheet.create({
   page: { paddingTop: 45.35, paddingBottom: 45.35, paddingHorizontal: 39.75, fontFamily: FAMILY, color: INK },
-  head: { marginTop: 3, flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: 2.25, borderColor: "#e63946", paddingBottom: 13.5, marginBottom: 18 },
+  head: { marginTop: 3, flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: 2.25, borderColor: "#1b9aaa", paddingBottom: 13.5, marginBottom: 18 },
   logo: { width: 39, height: 39, objectFit: "contain" },
   h1: t(20, { ...bold, marginBottom: 3 }),
   sub: t(13, { color: MUTED }),
@@ -48,7 +49,7 @@ export const shared = StyleSheet.create({
   obs: { ...t(13.5), marginBottom: 16.5, padding: 9, backgroundColor: "#f7f6f2", borderRadius: 6 },
   table: { borderTopWidth: BORDER, borderLeftWidth: BORDER, borderColor: LINE, marginBottom: 21 },
   tr: { flexDirection: "row" },
-  th: { flexDirection: "row", backgroundColor: INK },
+  th: { flexDirection: "row", backgroundColor: NAVY },
   cell: { paddingVertical: 6, paddingHorizontal: 7.5, borderRightWidth: BORDER, borderBottomWidth: BORDER, borderColor: LINE },
   td: t(12.5),
   tdNum: t(12.5, { textAlign: "right" }),
@@ -58,7 +59,33 @@ export const shared = StyleSheet.create({
   signText: t(12, { color: MUTED }),
   endNote: t(11, { color: FAINT, textAlign: "center", marginTop: 25.5 }),
   pageNo: { position: "absolute", bottom: 20, right: 39.69, fontSize: 7.5, color: FAINT },
+  footer: { position: "absolute", bottom: 18, left: 39.75, right: 39.75, flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: BORDER, borderColor: LINE, paddingTop: 6 },
+  footerLogo: { height: 11, objectFit: "contain" },
+  footerText: { fontSize: 7.5, color: FAINT },
 });
+
+/** Logo da empresa; sem logo própria, o ícone do DiaCheck (a Kenkyo mantém a dela). */
+export async function loadOrgLogo(org: { logoUrl: string | null; slug?: string | null }, origin: string) {
+  const padrao = org.slug === "kenkyo" ? "/kenkyo-logo.png" : "/diacheck-icon.png";
+  return (await loadImage(org.logoUrl ?? padrao, origin)) ?? (await loadImage(padrao, origin));
+}
+
+/** Logo horizontal do DiaCheck para o rodapé. */
+export const loadDiaCheckLogo = (origin: string) => loadImage("/diacheck-logo.png", origin);
+
+/** Rodapé de todas as páginas: identidade do DiaCheck, data de geração e página. */
+export function PdfFooter({ logo, orgName, geradoEm }: { logo: Buffer | null; orgName: string; geradoEm: string }) {
+  return (
+    <View style={shared.footer} fixed>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        {/* eslint-disable-next-line jsx-a11y/alt-text -- Image do react-pdf não tem alt */}
+        {logo && <Image src={logo} style={shared.footerLogo} />}
+        <Text style={shared.footerText}>diacheck.app.br · gerado para {orgName} em {geradoEm}</Text>
+      </View>
+      <Text style={shared.footerText} render={({ pageNumber, totalPages }) => `${pageNumber}/${totalPages}`} />
+    </View>
+  );
+}
 
 /** Linha de tabela com bordas colapsadas (1px), como `border-collapse`. */
 export function Row({ cells, widths, header }: { cells: React.ReactNode[]; widths: (number | undefined)[]; header?: boolean }) {

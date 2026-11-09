@@ -12,8 +12,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!audit || audit.status !== "finalizada") notFound();
 
   const pdf = await renderAuditPdf(audit, {
-    name: user.organizationName ?? "Kenkyo",
+    name: user.organizationName ?? "DiaCheck",
     logoUrl: user.organizationLogoUrl,
+    slug: user.organizationSlug,
     brandColor: resolveBrandColors(user.organizationPrimaryColor).red,
   }, new URL(req.url).origin);
 

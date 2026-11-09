@@ -1,3 +1,4 @@
+import { resolveBrandColors } from "@/lib/branding";
 import { isGestorProfile } from "@/lib/auth/profile";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getChecklistExportData } from "@/lib/data/checklists";
@@ -29,7 +30,7 @@ export async function GET(req: Request) {
   const nome = nomeArquivoChecklist({ checklist: data.checklistType.name, unitName: data.unitName, dia: data.date });
   const pdf = await renderChecklistPdf(
     data,
-    { name: user.organizationName ?? "Kenkyo", logoUrl: user.organizationLogoUrl },
+    { name: user.organizationName ?? "DiaCheck", logoUrl: user.organizationLogoUrl, slug: user.organizationSlug, brandColor: resolveBrandColors(user.organizationPrimaryColor).red },
     new URL(req.url).origin,
   );
 

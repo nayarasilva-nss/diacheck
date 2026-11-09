@@ -1,3 +1,4 @@
+import { resolveBrandColors } from "@/lib/branding";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canConferirRequisicao } from "@/lib/auth/requisicoes";
@@ -31,7 +32,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const nome = nomeArquivoRequisicao({ tipo: requisicao.tipo, unitName: requisicao.unitName, dia: checklistDayForInstant(requisicao.createdAt) });
   const pdf = await renderRequisicaoPdf(
     requisicao,
-    { name: user.organizationName ?? "Kenkyo", logoUrl: user.organizationLogoUrl },
+    { name: user.organizationName ?? "DiaCheck", logoUrl: user.organizationLogoUrl, slug: user.organizationSlug, brandColor: resolveBrandColors(user.organizationPrimaryColor).red },
     new URL(req.url).origin,
   );
 
