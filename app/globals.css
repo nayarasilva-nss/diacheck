@@ -3020,3 +3020,21 @@ button {
 /* Resumo do dia */
 .resumo-linha { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border-row); font-size: 14.5px; color: var(--text); }
 .resumo-linha span:first-child { min-width: 0; }
+
+/* Evolução */
+.evo-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
+.evo-kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+.evo-kpi b { display: block; font-size: 32px; line-height: 1.1; color: var(--text-strong); font-variant-numeric: tabular-nums; }
+.evo-kpi span { font-size: 13px; color: var(--text-muted); }
+.evo-barras { display: flex; align-items: flex-end; gap: 3px; height: 120px; margin: 8px 0 12px; }
+.evo-barra { flex: 1; height: 100%; display: flex; align-items: flex-end; }
+.evo-barra i { display: block; width: 100%; border-radius: 4px 4px 2px 2px; background: var(--neutral-bg); }
+.evo-barra.ok i { background: var(--kenkyo-red); }
+.evo-barra.parcial i { background: var(--warning); }
+.evo-barra.falhou i { background: var(--danger); }
+.evo-legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--text-muted); }
+.evo-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.evo-legenda i { width: 10px; height: 10px; border-radius: 3px; background: var(--neutral-bg); }
+.evo-legenda i.ok { background: var(--kenkyo-red); }
+.evo-legenda i.parcial { background: var(--warning); }
+.evo-legenda i.falhou { background: var(--danger); }

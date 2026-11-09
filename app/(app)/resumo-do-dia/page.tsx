@@ -9,6 +9,7 @@ import { getOpenPendenciasForUnit } from "@/lib/data/shift-logs";
 import { getAtrasosHoje } from "@/lib/data/painel";
 import { getMinhasRotinas } from "@/lib/data/rotinas";
 import { checklistDayISO } from "@/lib/date-utils";
+import { getEvolucao } from "@/lib/data/evolucao";
 
 export default async function ResumoDoDiaPage() {
   const user = await getCurrentUser();
@@ -25,6 +26,7 @@ export default async function ResumoDoDiaPage() {
     effectiveUnitId,
   };
 
+  const evolucao = await getEvolucao(orgId, user.id, user.unitId);
   const [checklists, rotinas, minhasAnomalias, pendencias, atrasos] = await Promise.all([
     getChecklistsForUser("daily", viewer),
     getMinhasRotinas(user.id),
@@ -56,6 +58,11 @@ export default async function ResumoDoDiaPage() {
             : "O que ficou pendente aparece abaixo e segue para amanhã."}
         </div>
       </div>
+
+      <Link href="/evolucao" className="resumo-linha" style={{ borderTop: 0, marginBottom: 8 }}>
+        <span>{evolucao.atual > 0 ? `${evolucao.atual} ${evolucao.atual === 1 ? "dia seguido" : "dias seguidos"} com tudo em ordem` : "Feche o dia hoje para começar uma sequência"}</span>
+        <span className="today-card-link">Ver evolução</span>
+      </Link>
 
       <section className="rotina-card">
         <header>

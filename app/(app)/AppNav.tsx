@@ -79,6 +79,7 @@ function buildGroups(
       items: [
         ...(gestor ? [{ href: "/indicadores", label: "Indicadores" }] : []),
         ...(gestor ? [{ href: "/auditorias", label: "Auditorias", badge: pendingAuditCount }] : []),
+        { href: "/evolucao", label: "Minha evolução" },
         { href: "/relatorio", label: "Relatórios" },
         { href: "/historico", label: "Histórico" },
         ...(showEscala ? [{ href: "/escala", label: "Escala" }] : []),
@@ -106,6 +107,7 @@ function buildGroups(
 
 const DESCRICOES: Record<string, string> = {
   "/rotinas": "Listas só suas, com lembrete",
+  "/evolucao": "Sua sequência de dias e evolução",
   "/resumo-do-dia": "O que foi feito e o que segue para amanhã",
   "/requisicoes": "Pedidos de estoque",
   "/solicitacoes": "Itens avulsos, com aprovação",

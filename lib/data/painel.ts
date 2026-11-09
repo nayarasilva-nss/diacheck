@@ -237,3 +237,16 @@ export async function getPendenciasDoDia(organizationId: number): Promise<Penden
     .filter((i) => i.state !== "done" && i.deadlineTime)
     .map((i) => ({ userId: i.userId, typeName: i.typeName, deadlineTime: i.deadlineTime!, minutosParaPrazo: deadlineMinutes(i.deadlineTime!) - nowMin, date: i.date }));
 }
+
+/** Por dia: quantos checklists a pessoa tinha de fazer e quantos concluiu. */
+export async function getDiasDaPessoa(organizationId: number, userId: number, unitId: number | null, from: string, to: string) {
+  const insts = (await loadInstances(organizationId, from, to, unitId, null)).filter((i) => i.userId === userId);
+  const porDia = new Map<string, { esperados: number; feitos: number }>();
+  for (const i of insts) {
+    const d = porDia.get(i.date) ?? { esperados: 0, feitos: 0 };
+    d.esperados++;
+    if (i.state === "done") d.feitos++;
+    porDia.set(i.date, d);
+  }
+  return porDia;
+}
