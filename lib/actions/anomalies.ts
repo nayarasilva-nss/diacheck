@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
+import { enviarPush, idsDosGestores } from "@/lib/push";
 import { anomalies, units } from "@/lib/db/schema";
 import { ANOMALY_SETORES, ANOMALY_TYPES } from "@/lib/data/anomalies";
 import { addHistoryEntry } from "@/lib/data/history";
@@ -88,6 +89,13 @@ export async function recordAnomaly(input: RecordAnomalyInput) {
   // vira ocorrência no acompanhamento da semana do ERP (e leva o que tinha ficado para trás)
   const novaId = inserted[0]!.id;
   after(async () => {
+    const alvos = await idsDosGestores(unit.organizationId, input.userId);
+    await enviarPush(alvos, {
+      titulo: "Nova anomalia registrada",
+      corpo: `${input.relator}: ${input.tipos.join(", ")}`,
+      url: "/anomalias",
+      tag: `anomalia-${novaId}`,
+    });
     await enviarOcorrenciaAoErp(novaId);
     await enviarAcompanhamentoPendente(unit.organizationId, 20);
   });

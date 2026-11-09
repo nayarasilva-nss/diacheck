@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { logout } from "@/lib/auth/actions";
 import { isGestorProfile } from "@/lib/auth/profile";
 import { ThemeSegmented, ThemeToggle } from "./ThemeToggle";
+import { AvisosPush } from "./AvisosPush";
 
 type NavItem = { href: string; label: string; badge?: number };
 type NavGroup = { label: string; items: NavItem[] };
@@ -336,6 +337,7 @@ export function AppNav({
           })}
         </nav>
 
+        <AvisosPush />
         <ThemeToggle className="app-nav-theme" />
         <div className="app-nav-footer">
           <div className="app-nav-avatar">{initials(userName)}</div>
@@ -410,6 +412,8 @@ export function AppNav({
               </div>
               <div className="sheet-label">Tema</div>
               <ThemeSegmented />
+              <div className="sheet-label">Avisos</div>
+              <AvisosPush />
               {contexto && (
                 <>
                   <div className="sheet-label">Hoje</div>

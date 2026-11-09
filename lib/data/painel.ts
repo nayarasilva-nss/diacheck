@@ -224,3 +224,16 @@ export async function getAtrasosHoje(organizationId: number, unitId: number | nu
     }))
     .sort((a, b) => b.minutesLate - a.minutesLate);
 }
+
+export type PendenciaDoDia = { userId: number; typeName: string; deadlineTime: string; minutosParaPrazo: number; date: string };
+
+/** Checklists de hoje ainda não concluídos que têm horário-limite, com quantos
+ * minutos faltam (negativo = já passou). Base dos lembretes por push. */
+export async function getPendenciasDoDia(organizationId: number): Promise<PendenciaDoDia[]> {
+  const today = checklistDayISO();
+  const insts = await loadInstances(organizationId, today, today, null, null);
+  const nowMin = minutesIntoChecklistDay(new Date());
+  return insts
+    .filter((i) => i.state !== "done" && i.deadlineTime)
+    .map((i) => ({ userId: i.userId, typeName: i.typeName, deadlineTime: i.deadlineTime!, minutosParaPrazo: deadlineMinutes(i.deadlineTime!) - nowMin, date: i.date }));
+}

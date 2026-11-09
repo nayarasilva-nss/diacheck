@@ -2990,3 +2990,9 @@ button {
   transition: transform 0.15s;
 }
 .app-nav-group-chevron.aberto { transform: rotate(90deg); }
+
+/* Avisos (push) */
+.avisos-push { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); margin: 8px 0; }
+.avisos-push strong { display: block; font-size: 14px; color: var(--text-strong); }
+.avisos-push small { display: block; font-size: 12.5px; color: var(--text-muted); line-height: 1.4; }
+.avisos-push .btn { flex: none; min-height: 0; padding: 8px 14px; font-size: 13px; }

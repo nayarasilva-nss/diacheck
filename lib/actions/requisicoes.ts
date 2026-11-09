@@ -11,6 +11,7 @@ import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canConferirRequisicao, canRequestExterna, canRequestInterna } from "@/lib/auth/requisicoes";
 import type { RequisicaoTipo } from "@/lib/auth/requisicoes";
 import { db } from "@/lib/db";
+import { enviarPush, idsDosGerentesDaUnidade, idsDosGestores } from "@/lib/push";
 import { requisicoes, requisicaoItens, catalogUnitMeasureEnum } from "@/lib/db/schema";
 import { addHistoryEntry } from "@/lib/data/history";
 import { resolveRequisicaoScope, linkWindowCutoff } from "@/lib/data/requisicoes";
@@ -176,6 +177,16 @@ export async function createRequisicao(
     `Requisição ${tipo} criada (${itens.length} ${itens.length === 1 ? "item" : "itens"})`,
     "completed",
   );
+
+  after(async () => {
+    const alvos = [...new Set([...(await idsDosGestores(user.organizationId!, user.id)), ...(await idsDosGerentesDaUnidade(unitId, user.id))])];
+    await enviarPush(alvos, {
+      titulo: urgente ? "Requisição urgente para conferir" : "Requisição para conferir",
+      corpo: `${user.name} pediu ${itens.length} ${itens.length === 1 ? "item" : "itens"} (${tipo}).`,
+      url: "/requisicoes",
+      tag: `requisicao-${requisicao.id}`,
+    });
+  });
 
   // externa: o que vai pro Empório e o que vai pra Compras (o ERP diz como cada item chega)
   await definirDestinos(requisicao.id);
@@ -389,6 +400,17 @@ export async function conferirRequisicao(
 
   // A baixa no ERP vai depois da resposta: a conferência nunca espera o ERP.
   sincronizarComErp(id, user.organizationId);
+
+  if (existing.tipo === "externa" && existing.requesterId !== user.id) {
+    after(() =>
+      enviarPush([existing.requesterId], {
+        titulo: "Requisição conferida",
+        corpo: "Confirme o que chegou na sua unidade.",
+        url: "/requisicoes",
+        tag: `requisicao-${id}`,
+      }),
+    );
+  }
 
   await addHistoryEntry(
     user.id,

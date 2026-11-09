@@ -840,3 +840,37 @@ export const escalaExcecoes = pgTable(
   },
   (table) => [uniqueIndex("escala_excecoes_user_date_idx").on(table.userId, table.date)],
 );
+
+// Celulares que ativaram os avisos (push). Uma pessoa pode ter vários aparelhos.
+export const pushInscricoes = pgTable(
+  "push_inscricoes",
+  {
+    id: serial("id").primaryKey(),
+    organizationId: integer("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("push_inscricoes_endpoint_idx").on(table.endpoint)],
+);
+
+// Avisos automáticos já enviados (lembrete de prazo/atraso), para não repetir.
+export const pushEnvios = pgTable(
+  "push_envios",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    chave: varchar("chave", { length: 120 }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("push_envios_user_chave_idx").on(table.userId, table.chave)],
+);
