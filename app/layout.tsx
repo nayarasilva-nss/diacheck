@@ -9,8 +9,8 @@ const schibsted = Schibsted_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Checklist",
-  description: "Sistema de checklists da sua operação",
+  title: "DiaCheck",
+  description: "Tudo em ordem, do começo ao fim do dia.",
 };
 
 export default function RootLayout({

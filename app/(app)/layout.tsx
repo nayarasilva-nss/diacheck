@@ -38,7 +38,7 @@ export default async function AppLayout({
           <p>
             {isPending
               ? "Recebemos o cadastro da sua empresa e ele está sendo revisado pela nossa equipe. Assim que for aprovado, você já poderá usar o sistema normalmente com este mesmo login."
-              : "O acesso da sua empresa foi desativado. Se você acha que isso é um engano, entre em contato com quem administra sua conta na Kenkyo."}
+              : "O acesso da sua empresa foi desativado. Se você acha que isso é um engano, entre em contato com quem administra sua conta no DiaCheck."}
           </p>
           <form action={logout}>
             <button className="btn-login" type="submit">
@@ -91,8 +91,8 @@ export default async function AppLayout({
         userName={user.name}
         profile={user.profile}
         jobFunctionName={user.jobFunctionName}
-        orgName={user.organizationName ?? "Kenkyo"}
-        orgLogoUrl={user.organizationLogoUrl ?? "/kenkyo-logo.png"}
+        orgName={user.organizationName ?? "DiaCheck"}
+        orgLogoUrl={user.organizationLogoUrl ?? (user.organizationSlug === "kenkyo" ? "/kenkyo-logo.png" : "/diacheck-icon.png")}
         canCreateAnomaly={user.profile !== "rh"}
         canSubmitFilleting={canSubmitFilleting(user)}
         canSubmitRestoIngesta={canSubmitRestoIngesta(user)}

@@ -9,15 +9,15 @@ export default function LoginPage() {
     <div className="login-container">
       <div className="login-card">
         <Image
-          src="/kenkyo-logo.png"
-          alt="Sistema de Checklists"
+          src="/diacheck-icon.png"
+          alt="DiaCheck"
           width={64}
           height={64}
           className="login-logo"
           priority
         />
-        <h1>Checklist</h1>
-        <p>Sistema de Checklists</p>
+        <h1>DiaCheck</h1>
+        <p>Tudo em ordem, do começo ao fim do dia.</p>
         <LoginForm />
         <p style={{ marginTop: 16, fontSize: 13, textAlign: "center" }}>
           Sua empresa ainda não usa o sistema?{" "}

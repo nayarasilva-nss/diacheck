@@ -1,4 +1,4 @@
-const KENKYO_DEFAULT = "#ff4d3d";
+const KENKYO_DEFAULT = "#1b9aaa";
 
 function hexToRgb(hex: string): [number, number, number] | null {
   const match = /^#([0-9a-f]{6})$/i.exec(hex.trim());
@@ -21,7 +21,7 @@ function toHex([r, g, b]: [number, number, number]) {
 
 /** Deriva as variações de cor (mais escura, mais clara, tints) que o
  * app usa a partir de uma única cor primária por empresa. Cai pro
- * vermelho padrão da Kenkyo se a empresa não tiver cor configurada ou
+ * teal padrão do DiaCheck se a empresa não tiver cor configurada ou
  * o valor salvo não for um hex válido. */
 export function resolveBrandColors(primaryColor: string | null | undefined) {
   const rgb = hexToRgb(primaryColor ?? "") ?? hexToRgb(KENKYO_DEFAULT)!;

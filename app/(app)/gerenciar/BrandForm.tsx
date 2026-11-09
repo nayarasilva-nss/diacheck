@@ -52,7 +52,7 @@ export function BrandForm({ organization }: { organization: Organization }) {
           id="brandColor"
           name="primaryColor"
           type="color"
-          defaultValue={organization.primaryColor ?? "#ff4d3d"}
+          defaultValue={organization.primaryColor ?? "#1b9aaa"}
           style={{ height: 40, padding: 2 }}
         />
       </div>
