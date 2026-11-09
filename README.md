@@ -2,7 +2,7 @@
 
 Sistema de gerenciamento de checklists interno da operação Kenkyo — checklists diários e semanais, controle de acesso por perfil, dashboard de conformidade, relatórios e painel de gestão.
 
-Reconstrução em stack real do [protótipo estático original](https://github.com/nayarasilva-nss/checklist-kenkyo) (HTML/CSS/JS com `localStorage`), agora com banco de dados, autenticação real e dados isolados por usuário/data.
+Reconstrução em stack real do [protótipo estático original](https://github.com/nayarasilva-nss/diacheck) (HTML/CSS/JS com `localStorage`), agora com banco de dados, autenticação real e dados isolados por usuário/data.
 
 ## Stack
 
