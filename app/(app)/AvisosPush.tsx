@@ -15,6 +15,7 @@ function chaveParaBytes(base64: string) {
 export function AvisosPush({ chave }: { chave?: string }) {
   const [estado, setEstado] = useState<Estado>("carregando");
   const [ocupado, setOcupado] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -36,6 +37,7 @@ export function AvisosPush({ chave }: { chave?: string }) {
 
   async function ligar() {
     setOcupado(true);
+    setErro(null);
     try {
       const perm = await Notification.requestPermission();
       if (perm !== "granted") return setEstado(perm === "denied" ? "bloqueado" : "desligado");
@@ -47,8 +49,9 @@ export function AvisosPush({ chave }: { chave?: string }) {
       const j = sub.toJSON();
       await salvarInscricaoPush({ endpoint: sub.endpoint, p256dh: j.keys?.p256dh ?? "", auth: j.keys?.auth ?? "", userAgent: navigator.userAgent });
       setEstado("ligado");
-    } catch {
+    } catch (e) {
       setEstado("desligado");
+      setErro(`Não deu para ativar: ${e instanceof Error ? `${e.name} - ${e.message}` : "erro desconhecido"}`);
     } finally {
       setOcupado(false);
     }
@@ -79,6 +82,7 @@ export function AvisosPush({ chave }: { chave?: string }) {
       <div>
         <strong>Avisos no celular</strong>
         <small>{dica[estado] ?? "Prazo e atraso de checklists, anomalias e requisições."}</small>
+        {erro && <small style={{ color: "var(--danger-text)" }}>{erro}</small>}
       </div>
       {(estado === "desligado" || estado === "ligado") && (
         <button type="button" className="btn btn-secondary" disabled={ocupado} onClick={estado === "ligado" ? desligar : ligar}>
