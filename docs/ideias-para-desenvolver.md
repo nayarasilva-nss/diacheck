@@ -3,10 +3,10 @@
 A primeira versão da página de venda prometia coisas que o app ainda não faz.
 Ficam aqui para a gente decidir e construir:
 
-- Lembretes automáticos de checklist (notificação no celular).
-- Backup e exportação dos registros pelo próprio usuário (CSV/Excel).
-- Sequência de dias registrados e evolução da rotina ao longo do tempo.
-- Rotinas pessoais (listas livres, fora dos checklists por função).
-- Resumo ao fechar o dia: o que foi feito e o que segue para amanhã.
+- (feito) Lembretes automáticos de checklist (push).
+- (feito) Exportação dos registros em CSV; backup completo só se alguma empresa pedir.
+- (feito) Sequência de dias e evolução.
+- (feito) Rotinas pessoais.
+- (feito) Resumo do dia (sem aviso de fim de turno nem registro guardado).
 - App nas lojas (App Store e Google Play), com notificações push.
 - E-mail de contato e formulário de interesse na página de venda (falta definir o e-mail).

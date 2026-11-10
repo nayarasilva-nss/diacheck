@@ -12,6 +12,10 @@ const RECURSOS: { titulo: string; texto: string; erp?: boolean }[] = [
   { titulo: "Estoque e contagem", texto: "Saldo, custo e alertas da unidade, e a contagem de estoque feita direto no celular.", erp: true },
   { titulo: "Fechamento de caixa", texto: "Recebimentos, vouchers, sangria e troco final registrados no app, sem planilha.", erp: true },
   { titulo: "Auditorias de unidade", texto: "Roteiro de critérios com nota por grupo e relatório em PDF com a logo da sua empresa." },
+  { titulo: "Avisos no celular", texto: "Lembrete de checklist perto do prazo e atrasado, e aviso de anomalia nova e de requisição para conferir." },
+  { titulo: "Rotinas pessoais", texto: "Cada pessoa monta as próprias listas, por dia da semana, com lembrete no horário que quiser. São privadas." },
+  { titulo: "Resumo do dia e evolução", texto: "O que foi feito e o que segue para amanhã, mais a sequência de dias com tudo em ordem e a evolução dos últimos 30 dias." },
+  { titulo: "Exportação em planilha", texto: "O gestor baixa checklists, anomalias e requisições por período, em CSV para abrir no Excel." },
   { titulo: "Várias unidades, a sua marca", texto: "Cada empresa com suas unidades, equipe, logo e cor. Cada pessoa vê só o que é da sua função." },
 ];
 
@@ -62,7 +66,7 @@ export default async function Home() {
           <p className="lp-sub">Três passos para a sua equipe começar.</p>
           <div className="lp-steps">
             <div className="lp-step"><b>1</b><h3>Cadastre a empresa</h3><p>Unidades, equipe e os checklists de cada função.</p></div>
-            <div className="lp-step"><b>2</b><h3>A equipe preenche no celular</h3><p>É só instalar na tela inicial. Cada pessoa vê o que precisa fazer hoje.</p></div>
+            <div className="lp-step"><b>2</b><h3>A equipe preenche no celular</h3><p>É só instalar na tela inicial e ativar os avisos. Cada pessoa vê o que precisa fazer hoje.</p></div>
             <div className="lp-step"><b>3</b><h3>O gestor acompanha</h3><p>Atrasos, anomalias, requisições e relatórios em PDF, em tempo real.</p></div>
           </div>
         </div>
@@ -71,7 +75,7 @@ export default async function Home() {
       <section className="lp-cta">
         <div className="lp-wrap">
           <h2>Chega de perder o fio da meada</h2>
-          <p>Em breve na App Store e no Google Play.</p>
+          <p>Já dá para instalar na tela inicial do celular. Em breve na App Store e no Google Play.</p>
           <Link className="lp-btn lp-btn-main" href="/login">Entrar no DiaCheck</Link>
         </div>
       </section>
