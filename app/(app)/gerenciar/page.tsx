@@ -29,6 +29,7 @@ import { AuditTemplateEditor } from "./AuditTemplateEditor";
 import { getAuditTemplate } from "@/lib/data/audits";
 import { ErpPainel } from "./ErpPainel";
 import { EscalaPainel } from "./EscalaPainel";
+import { ImportarModelos } from "./ImportarModelos";
 
 // Abas agrupadas por assunto. As chaves (?tab=...) continuam as mesmas, então links antigos seguem valendo.
 type Grupo = { key: string; label: string; ajuda: string; tabs: { key: string; label: string }[] };
@@ -151,6 +152,8 @@ export default async function GerenciarPage({
           </div>
         </div>
       )}
+
+      {tab === "modelos" && <ImportarModelos />}
 
       {tab === "modelos" && (
         <div className="board-layout">
