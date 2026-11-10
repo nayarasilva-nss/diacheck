@@ -76,7 +76,10 @@ export default async function Home() {
         <div className="lp-wrap">
           <h2>Chega de perder o fio da meada</h2>
           <p>Já dá para instalar na tela inicial do celular. Em breve na App Store e no Google Play.</p>
-          <Link className="lp-btn lp-btn-main" href="/login">Entrar no DiaCheck</Link>
+          <div className="lp-row">
+            <Link className="lp-btn lp-btn-main" href="/login">Entrar no DiaCheck</Link>
+            <a className="lp-btn lp-btn-ghost" href="mailto:contato@diacheck.app.br?subject=Quero%20conhecer%20o%20DiaCheck">Falar com a gente</a>
+          </div>
         </div>
       </section>
 
@@ -84,7 +87,7 @@ export default async function Home() {
         <div className="lp-wrap">
           <Image src="/diacheck-logo.png" alt="DiaCheck" width={130} height={30} />
           <p>Tudo em ordem, do começo ao fim do dia.</p>
-          <p>© 2026 DiaCheck</p>
+          <p>© 2026 DiaCheck · <a href="mailto:contato@diacheck.app.br" style={{ color: "#4fc0cd" }}>contato@diacheck.app.br</a></p>
         </div>
       </footer>
     </div>

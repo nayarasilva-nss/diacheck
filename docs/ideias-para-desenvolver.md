@@ -9,4 +9,4 @@ Ficam aqui para a gente decidir e construir:
 - (feito) Rotinas pessoais.
 - (feito) Resumo do dia (sem aviso de fim de turno nem registro guardado).
 - App nas lojas (App Store e Google Play), com notificações push.
-- E-mail de contato e formulário de interesse na página de venda (falta definir o e-mail).
+- (feito) E-mail de contato na página de venda (contato@diacheck.app.br); falta formulário de interesse.
