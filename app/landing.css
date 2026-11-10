@@ -35,4 +35,12 @@
 .lp-cta h2 { color:#fff; font-size:clamp(26px,4vw,32px); margin-bottom:12px; }
 .lp-cta p { color:#dff3f5; margin-bottom:28px; }
 .lp-foot { background:var(--navy); color:#8fa2b5; padding:40px 0; text-align:center; font-size:14px; }
-.lp-foot img { height:30px; width:auto; margin-bottom:14px; filter:brightness(0) invert(1); opacity:.9; }
+.lp-foot img { height:30px; width:auto; margin-bottom:14px; }
+.lp-contato { background:#fff; }
+.lp-form { max-width:520px; margin:0 auto; display:grid; gap:14px; text-align:left; }
+.lp-campo label { display:block; font-size:14px; font-weight:700; margin-bottom:4px; color:var(--navy); }
+.lp-campo input, .lp-campo textarea { width:100%; padding:12px 14px; border:1px solid #cfd6dd; border-radius:10px; font:inherit; background:#fff; color:var(--ink); }
+.lp-campo input:focus, .lp-campo textarea:focus { outline:2px solid var(--teal); outline-offset:1px; }
+.lp-form .lp-btn { border:0; cursor:pointer; justify-self:start; }
+.lp-form-erro { color:#b3261e; font-size:14px; }
+.lp-form-ok { text-align:center; font-weight:700; color:var(--teal-deep); font-size:18px; }

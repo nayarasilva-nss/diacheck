@@ -351,6 +351,13 @@
       "when": 1794266259521,
       "tag": "0049_rotinas_pessoais",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1794276057200,
+      "tag": "0050_fechamento_e_interesses",
+      "breakpoints": true
     }
   ]
 }

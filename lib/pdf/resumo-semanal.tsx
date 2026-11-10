@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/alt-text -- react-pdf Image não é HTML; não tem alt */
 import "server-only";
 import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
-import { FAINT, FONT_FAMILY, INK, LINE, MUTED, t, bold, caps } from "./shared";
+import { FAINT, FONT_FAMILY, INK, LINE, MUTED, NAVY, PdfFooter, t, bold, caps } from "./shared";
 
 /**
  * O resumo semanal da operação — o documento que o dono (de qualquer
@@ -24,7 +24,7 @@ const s = StyleSheet.create({
   kpiLabel: t(10.5, { color: MUTED, textAlign: "center" }),
   table: { borderTopWidth: BORDER, borderLeftWidth: BORDER, borderColor: LINE, marginBottom: 18 },
   tr: { flexDirection: "row" },
-  th: { flexDirection: "row", backgroundColor: INK },
+  th: { flexDirection: "row", backgroundColor: NAVY },
   cell: { paddingVertical: 6, paddingHorizontal: 7.5, borderRightWidth: BORDER, borderBottomWidth: BORDER, borderColor: LINE },
   td: t(12.5),
   thText: t(11, { ...caps(11, 0.03), color: "#ffffff" }),
@@ -47,6 +47,9 @@ export type DadosSemanais = {
   pessoas: { nome: string; unidade: string | null; esperados: number; concluidos: number; taxa: number }[];
   anomaliasAbertas: { data: string; unidade: string; tipos: string; detalhe: string | null }[];
   logo: Buffer | null;
+  /** Logo horizontal do DiaCheck, para o rodapé. */
+  dcLogo?: Buffer | null;
+  brandColor?: string;
 };
 
 const corDaTaxa = (v: number) => (v >= 90 ? s.ok : v >= 75 ? s.warn : s.bad);
@@ -57,7 +60,7 @@ export async function renderResumoSemanal(d: DadosSemanais): Promise<Buffer> {
   return renderToBuffer(
     <Document>
       <Page size="A4" style={s.page}>
-        <View style={s.head}>
+        <View style={[s.head, { borderColor: d.brandColor ?? "#1b9aaa" }]}>
           {d.logo && <Image style={s.logo} src={d.logo} />}
           <View>
             <Text style={s.h1}>Resumo da semana</Text>
@@ -138,7 +141,8 @@ export async function renderResumoSemanal(d: DadosSemanais): Promise<Buffer> {
           </View>
         )}
 
-        <Text style={s.endNote}>Gerado pelo Checklist em {d.geradoEm} · {pendentes} checklist(s) deixados de fazer.</Text>
+        <Text style={s.endNote}>{pendentes} checklist(s) deixados de fazer na semana.</Text>
+        <PdfFooter logo={d.dcLogo ?? null} orgName={d.empresa} geradoEm={d.geradoEm} />
       </Page>
     </Document>,
   );

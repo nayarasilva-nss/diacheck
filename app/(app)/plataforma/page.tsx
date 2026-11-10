@@ -7,6 +7,9 @@ import {
   type OrganizationStatus,
 } from "@/lib/data/organizations";
 import { OrganizationStatusActions } from "./OrganizationStatusActions";
+import { db } from "@/lib/db";
+import { interesses } from "@/lib/db/schema";
+import { desc } from "drizzle-orm";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Pendente",
@@ -18,7 +21,7 @@ export default async function PlataformaPage() {
   const user = await getCurrentUser();
   if (!isPlatformOperator(user)) redirect("/hoje");
 
-  const [orgs, uso] = await Promise.all([getAllOrganizationsWithStats(), getUsoRecente()]);
+  const [orgs, uso, pedidos] = await Promise.all([getAllOrganizationsWithStats(), getUsoRecente(), db.select().from(interesses).orderBy(desc(interesses.createdAt)).limit(30)]);
 
   return (
     <>
@@ -73,6 +76,21 @@ export default async function PlataformaPage() {
           ))
         )}
       </div>
+
+      <h3 style={{ margin: "28px 0 8px" }}>Pedidos da página de venda ({pedidos.length})</h3>
+      {pedidos.length === 0 ? (
+        <p className="items-count">Nenhum pedido ainda.</p>
+      ) : (
+        pedidos.map((p) => (
+          <div key={p.id} className="resumo-linha" style={{ alignItems: "flex-start" }}>
+            <span>
+              <strong>{p.nome}</strong>{p.empresa ? ` · ${p.empresa}` : ""} · {p.contato}
+              {p.mensagem ? <><br /><span style={{ color: "var(--text-muted)" }}>{p.mensagem}</span></> : null}
+            </span>
+            <span className="rotina-chip">{new Date(p.createdAt).toLocaleDateString("pt-BR")}</span>
+          </div>
+        ))
+      )}
     </>
   );
 }

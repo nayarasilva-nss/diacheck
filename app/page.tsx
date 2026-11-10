@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { decrypt, getSessionCookie } from "@/lib/auth/session";
+import { FormInteresse } from "./FormInteresse";
 import "./landing.css";
 
 const RECURSOS: { titulo: string; texto: string; erp?: boolean }[] = [
@@ -78,14 +79,22 @@ export default async function Home() {
           <p>Já dá para instalar na tela inicial do celular. Em breve na App Store e no Google Play.</p>
           <div className="lp-row">
             <Link className="lp-btn lp-btn-main" href="/login">Entrar no DiaCheck</Link>
-            <a className="lp-btn lp-btn-ghost" href="mailto:contato@diacheck.app.br?subject=Quero%20conhecer%20o%20DiaCheck">Falar com a gente</a>
+            <a className="lp-btn lp-btn-ghost" href="#contato">Falar com a gente</a>
           </div>
+        </div>
+      </section>
+
+      <section className="lp-sec lp-contato" id="contato">
+        <div className="lp-wrap">
+          <h2 className="lp-title">Quer conhecer o DiaCheck?</h2>
+          <p className="lp-sub">Deixe seu contato e a gente responde. Se preferir, escreva para <a href="mailto:contato@diacheck.app.br" style={{ color: "var(--teal-deep)", fontWeight: 700 }}>contato@diacheck.app.br</a>.</p>
+          <FormInteresse />
         </div>
       </section>
 
       <footer className="lp-foot">
         <div className="lp-wrap">
-          <Image src="/diacheck-logo.png" alt="DiaCheck" width={130} height={30} />
+          <Image src="/diacheck-logo-dark.png" alt="DiaCheck" width={132} height={30} />
           <p>Tudo em ordem, do começo ao fim do dia.</p>
           <p>© 2026 DiaCheck · <a href="mailto:contato@diacheck.app.br" style={{ color: "#4fc0cd" }}>contato@diacheck.app.br</a></p>
         </div>

@@ -913,3 +913,32 @@ export const rotinaMarcas = pgTable(
   },
   (table) => [uniqueIndex("rotina_marcas_item_date_idx").on(table.itemId, table.date)],
 );
+
+// Dia fechado pela pessoa (Resumo do dia › Fechar o dia): guarda o resumo na hora e uma observação.
+export const fechamentosDia = pgTable(
+  "fechamentos_dia",
+  {
+    id: serial("id").primaryKey(),
+    organizationId: integer("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    date: date("date", { mode: "string" }).notNull(),
+    nota: text("nota"),
+    resumo: jsonb("resumo").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("fechamentos_dia_user_date_idx").on(table.userId, table.date)],
+);
+
+// Quem pediu contato pela página de venda.
+export const interesses = pgTable("interesses", {
+  id: serial("id").primaryKey(),
+  nome: varchar("nome", { length: 120 }).notNull(),
+  empresa: varchar("empresa", { length: 120 }),
+  contato: varchar("contato", { length: 160 }).notNull(),
+  mensagem: text("mensagem"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

@@ -1,9 +1,9 @@
-import { isNotNull } from "drizzle-orm";
+import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
 import { getPendenciasDoDia } from "@/lib/data/painel";
 import { enviarPushUmaVez } from "@/lib/push";
-import { rotinasPessoais } from "@/lib/db/schema";
+import { fechamentosDia, pushInscricoes, rotinasPessoais, users } from "@/lib/db/schema";
 import { getMinhasRotinas } from "@/lib/data/rotinas";
 import { minutesIntoChecklistDay } from "@/lib/checklist-scoring";
 import { checklistDayISO } from "@/lib/date-utils";
@@ -14,6 +14,7 @@ import { checklistDayISO } from "@/lib/date-utils";
  * Cada aviso sai uma vez só por pessoa, checklist e dia.
  */
 const ANTES_DO_PRAZO = 30; // minutos
+const HORA_FECHAR_DIA = 22 * 60 + 30; // 22:30 (Brasília)
 const ATRASO_MAXIMO = 120; // não avisa atraso de mais de 2 h (já passou da hora de lembrar)
 
 export async function GET(req: Request) {
@@ -54,5 +55,20 @@ export async function GET(req: Request) {
       }
     }
   }
-  return Response.json({ ok: true, prazo, atraso, rotinas });
+
+  // Fim do turno: lembra gerentes e líderes (com aviso ativado) de fechar o dia, se ainda não fecharam.
+  let fechar = 0;
+  if (agora >= HORA_FECHAR_DIA && agora - HORA_FECHAR_DIA <= ATRASO_MAXIMO) {
+    const candidatos = await db
+      .select({ id: users.id })
+      .from(users)
+      .innerJoin(pushInscricoes, eq(pushInscricoes.userId, users.id))
+      .where(and(inArray(users.profile, ["gerente", "lider"]), isNotNull(users.unitId)));
+    const jaFecharam = new Set((await db.select({ userId: fechamentosDia.userId }).from(fechamentosDia).where(eq(fechamentosDia.date, hoje))).map((f) => f.userId));
+    for (const id of new Set(candidatos.map((c) => c.id))) {
+      if (jaFecharam.has(id)) continue;
+      if (await enviarPushUmaVez(id, `fechar-dia:${hoje}`, { titulo: "Hora de fechar o dia", corpo: "Veja o resumo do dia e feche o turno.", url: "/resumo-do-dia", tag: "fechar-dia" })) fechar++;
+    }
+  }
+  return Response.json({ ok: true, prazo, atraso, rotinas, fechar });
 }

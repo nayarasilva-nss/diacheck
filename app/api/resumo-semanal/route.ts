@@ -3,6 +3,8 @@ import { getPainelGestor } from "@/lib/data/painel";
 import { getAnomaliesByScope } from "@/lib/data/anomalies";
 import { renderResumoSemanal } from "@/lib/pdf/resumo-semanal";
 import { checklistDayISO, daysBeforeISO } from "@/lib/date-utils";
+import { loadDiaCheckLogo, loadOrgLogo } from "@/lib/pdf/shared";
+import { resolveBrandColors } from "@/lib/branding";
 
 /**
  * O resumo semanal em PDF (Início › Indicadores › Resumo da semana): a
@@ -42,18 +44,12 @@ export async function GET(req: Request) {
   const abertas = await getAnomaliesByScope({ mode: "unit", unitId: null }, user.organizationId, { sinceDate: de });
   const emAberto = abertas.filter((a) => a.status === "aberta" && a.date <= ate).slice(0, 30);
 
-  let logo: Buffer | null = null;
-  if (user.organizationLogoUrl) {
-    try {
-      const res = await fetch(new URL(user.organizationLogoUrl, url.origin), { signal: AbortSignal.timeout(10_000) });
-      const buf = res.ok ? Buffer.from(await res.arrayBuffer()) : null;
-      logo = buf && buf[0] === 0x89 && buf[1] === 0x50 ? buf : null; // PNG
-    } catch { logo = null; }
-  }
+  const origem = url.origin;
+  const [logo, dcLogo] = await Promise.all([loadOrgLogo({ logoUrl: user.organizationLogoUrl, slug: user.organizationSlug }, origem), loadDiaCheckLogo(origem)]);
 
   const fmt = (d: string) => new Date(`${d}T00:00:00`).toLocaleDateString("pt-BR");
   const pdf = await renderResumoSemanal({
-    empresa: user.organizationName ?? "Checklist",
+    empresa: user.organizationName ?? "DiaCheck",
     de: fmt(de),
     até: fmt(ate),
     geradoEm: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
@@ -70,6 +66,8 @@ export async function GET(req: Request) {
       detalhe: a.oQueAconteceu ?? null,
     })),
     logo,
+    dcLogo,
+    brandColor: resolveBrandColors(user.organizationPrimaryColor).red,
   });
 
   const nome = `resumo-semanal-${de}.pdf`;
