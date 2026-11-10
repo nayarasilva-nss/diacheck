@@ -89,7 +89,7 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }:
     if (previa) return; // prévia: nada vai ao ERP
     if (trocoFinal.trim() === "") { setMsg({ erro: "Informe o troco final (o dinheiro que fica na gaveta)." }); return; }
     const nomes = terminais.map((t) => t.nome.trim());
-    if (nomes.some((n) => !n) || new Set(nomes).size !== nomes.length) { setMsg({ erro: "Dê um número diferente a cada maquininha." }); return; }
+    if (nomes.some((n) => !n) || new Set(nomes).size !== nomes.length) { setMsg({ erro: "Dê um nome ou número diferente a cada maquininha (ex.: PagBank, Redeflex)." }); return; }
     iniciar(async () => {
       const r = await enviarFechamentoCaixa(unidadeId, {
         data, caixa, fundo_abertura: fundo, suprimento, sangria, troco_final: trocoFinal, observacao: obs,
@@ -119,12 +119,13 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }:
       {travado && <div className="empty-state" style={{ marginBottom: 12 }}>Este caixa já foi conferido pelo financeiro. Para corrigir, fale com o financeiro.</div>}
 
       {titulo("Recebimentos nas maquininhas")}
+      <datalist id="maquininhas"><option value="PagBank" /><option value="Redeflex" /></datalist>
       {terminais.map((t, i) => (
         <div key={i} style={{ marginBottom: 12, padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 12 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
-            <strong style={{ fontSize: 14 }}>Nº do terminal</strong>
-            <input value={t.nome} onChange={(e) => mudarTerminal(i, (x) => ({ ...x, nome: e.target.value }))} aria-label="Número do terminal"
-              style={{ width: 120 }} disabled={travado} />
+            <strong style={{ fontSize: 14 }}>Maquininha</strong>
+            <input value={t.nome} onChange={(e) => mudarTerminal(i, (x) => ({ ...x, nome: e.target.value }))} aria-label="Maquininha (operadora ou nº do terminal)"
+              list="maquininhas" placeholder="PagBank, Redeflex ou nº" style={{ width: 190 }} disabled={travado} />
             {!travado && terminais.length > 1 && (
               <button type="button" className="btn-small" onClick={() => setTerminais((ts) => ts.filter((_, j) => j !== i))}>Tirar</button>
             )}
