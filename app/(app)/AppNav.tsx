@@ -78,6 +78,7 @@ function buildGroups(
       label: "ACOMPANHAMENTO",
       items: [
         ...(gestor ? [{ href: "/indicadores", label: "Indicadores" }] : []),
+        ...(gestor ? [{ href: "/exportar", label: "Exportar registros" }] : []),
         ...(gestor ? [{ href: "/auditorias", label: "Auditorias", badge: pendingAuditCount }] : []),
         { href: "/evolucao", label: "Minha evolução" },
         { href: "/relatorio", label: "Relatórios" },
@@ -107,6 +108,7 @@ function buildGroups(
 
 const DESCRICOES: Record<string, string> = {
   "/rotinas": "Listas só suas, com lembrete",
+  "/exportar": "Baixar registros em planilha",
   "/evolucao": "Sua sequência de dias e evolução",
   "/resumo-do-dia": "O que foi feito e o que segue para amanhã",
   "/requisicoes": "Pedidos de estoque",
