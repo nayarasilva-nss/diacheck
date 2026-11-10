@@ -942,3 +942,59 @@ export const interesses = pgTable("interesses", {
   mensagem: text("mensagem"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// Plano de ação em ciclo PDCA, nascido de uma ou mais anomalias.
+// etapa: plan | do | check | act | encerrado. Cada novo ciclo é outro plano (ciclo + 1) apontando para o anterior.
+export const planosAcao = pgTable("planos_acao", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  titulo: varchar("titulo", { length: 160 }).notNull(),
+  problema: text("problema").notNull(),
+  causaRaiz: text("causa_raiz").notNull().default(""),
+  meta: text("meta").notNull().default(""),
+  etapa: varchar("etapa", { length: 12 }).notNull().default("plan"),
+  ciclo: integer("ciclo").notNull().default(1),
+  planoOrigemId: integer("plano_origem_id").references((): AnyPgColumn => planosAcao.id, { onDelete: "set null" }),
+  criadoPorId: integer("criado_por_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  verificarEm: date("verificar_em", { mode: "string" }),
+  verificacaoResultado: varchar("verificacao_resultado", { length: 12 }), // eficaz | parcial | nao_eficaz
+  verificacaoNota: text("verificacao_nota"),
+  padronizacaoNota: text("padronizacao_nota"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  encerradoEm: timestamp("encerrado_em"),
+});
+
+export const planoAnomalias = pgTable(
+  "plano_anomalias",
+  {
+    id: serial("id").primaryKey(),
+    planoId: integer("plano_id")
+      .notNull()
+      .references(() => planosAcao.id, { onDelete: "cascade" }),
+    anomaliaId: integer("anomalia_id")
+      .notNull()
+      .references(() => anomalies.id, { onDelete: "cascade" }),
+  },
+  (table) => [uniqueIndex("plano_anomalias_idx").on(table.planoId, table.anomaliaId)],
+);
+
+// status: a_fazer | em_andamento | feita
+export const planoAcoes = pgTable("plano_acoes", {
+  id: serial("id").primaryKey(),
+  planoId: integer("plano_id")
+    .notNull()
+    .references(() => planosAcao.id, { onDelete: "cascade" }),
+  descricao: text("descricao").notNull(),
+  responsavelId: integer("responsavel_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  prazo: date("prazo", { mode: "string" }).notNull(),
+  status: varchar("status", { length: 14 }).notNull().default("a_fazer"),
+  notaExecucao: text("nota_execucao"),
+  concluidoEm: timestamp("concluido_em"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

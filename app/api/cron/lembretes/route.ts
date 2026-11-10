@@ -1,9 +1,9 @@
-import { and, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, lte, ne } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
 import { getPendenciasDoDia } from "@/lib/data/painel";
 import { enviarPushUmaVez } from "@/lib/push";
-import { fechamentosDia, pushInscricoes, rotinasPessoais, users } from "@/lib/db/schema";
+import { fechamentosDia, planoAcoes, planosAcao, pushInscricoes, rotinasPessoais, users } from "@/lib/db/schema";
 import { getMinhasRotinas } from "@/lib/data/rotinas";
 import { minutesIntoChecklistDay } from "@/lib/checklist-scoring";
 import { checklistDayISO } from "@/lib/date-utils";
@@ -56,6 +56,28 @@ export async function GET(req: Request) {
     }
   }
 
+  // Planos de ação (PDCA): ação que vence hoje ou venceu, e plano com a data de verificar chegando.
+  let acoesAvisadas = 0;
+  let verificacoes = 0;
+  if (agora >= 8 * 60) {
+    const vencendo = await db
+      .select({ id: planoAcoes.id, descricao: planoAcoes.descricao, responsavelId: planoAcoes.responsavelId, prazo: planoAcoes.prazo })
+      .from(planoAcoes)
+      .innerJoin(planosAcao, eq(planosAcao.id, planoAcoes.planoId))
+      .where(and(ne(planoAcoes.status, "feita"), ne(planosAcao.etapa, "encerrado"), lte(planoAcoes.prazo, hoje)));
+    for (const a of vencendo) {
+      const atrasada = a.prazo < hoje;
+      if (await enviarPushUmaVez(a.responsavelId, atrasada ? `acao-atraso:${a.id}` : `acao-hoje:${a.id}`, { titulo: atrasada ? "Ação atrasada" : "Ação vence hoje", corpo: a.descricao.slice(0, 120), url: "/planos-de-acao", tag: `acao-${a.id}` })) acoesAvisadas++;
+    }
+    const paraVerificar = await db
+      .select({ id: planosAcao.id, titulo: planosAcao.titulo, criadoPorId: planosAcao.criadoPorId })
+      .from(planosAcao)
+      .where(and(inArray(planosAcao.etapa, ["do", "check"]), isNotNull(planosAcao.verificarEm), lte(planosAcao.verificarEm, hoje)));
+    for (const p of paraVerificar) {
+      if (await enviarPushUmaVez(p.criadoPorId, `plano-verificar:${p.id}`, { titulo: "Hora de verificar o plano de ação", corpo: p.titulo, url: `/planos-de-acao/${p.id}`, tag: `plano-${p.id}` })) verificacoes++;
+    }
+  }
+
   // Fim do turno: lembra gerentes e líderes (com aviso ativado) de fechar o dia, se ainda não fecharam.
   let fechar = 0;
   if (agora >= HORA_FECHAR_DIA && agora - HORA_FECHAR_DIA <= ATRASO_MAXIMO) {
@@ -70,5 +92,5 @@ export async function GET(req: Request) {
       if (await enviarPushUmaVez(id, `fechar-dia:${hoje}`, { titulo: "Hora de fechar o dia", corpo: "Veja o resumo do dia e feche o turno.", url: "/resumo-do-dia", tag: "fechar-dia" })) fechar++;
     }
   }
-  return Response.json({ ok: true, prazo, atraso, rotinas, fechar });
+  return Response.json({ ok: true, prazo, atraso, rotinas, fechar, acoesAvisadas, verificacoes });
 }

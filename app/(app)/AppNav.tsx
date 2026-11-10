@@ -39,6 +39,7 @@ function buildGroups(
           { href: "/hoje", label: "Hoje" },
           { href: "/anomalias", label: "Anomalias" },
           { href: "/diario-de-bordo", label: "Diário de bordo" },
+          { href: "/planos-de-acao", label: "Planos de ação" },
         ],
       },
     ];
@@ -69,6 +70,7 @@ function buildGroups(
       label: "REGISTROS",
       items: [
         { href: "/anomalias", label: "Anomalias" },
+        { href: "/planos-de-acao", label: "Planos de ação" },
         { href: "/perdas", label: "Perdas" },
         ...(showCaixa ? [{ href: "/caixa", label: "Fechamento de caixa" }] : []),
         ...(showFormularios ? [{ href: "/formularios", label: "Formulários" }] : []),
@@ -108,6 +110,7 @@ function buildGroups(
 
 const DESCRICOES: Record<string, string> = {
   "/rotinas": "Listas só suas, com lembrete",
+  "/planos-de-acao": "Ciclo PDCA: ações, prazos e verificação",
   "/exportar": "Baixar registros em planilha",
   "/evolucao": "Sua sequência de dias e evolução",
   "/resumo-do-dia": "O que foi feito e o que segue para amanhã",

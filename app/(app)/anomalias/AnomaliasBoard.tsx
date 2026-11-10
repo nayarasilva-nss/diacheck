@@ -127,6 +127,11 @@ export function AnomaliasBoard({
           >
             Baixar Excel
           </a>
+          {canDelete && (
+            <a className="btn-secondary" style={{ display: "inline-block" }} href="/anomalias/analise">
+              Análise e planos
+            </a>
+          )}
           {canCreate && (
             <button type="button" className="btn-primary" onClick={openCreate}>
               Nova anomalia
@@ -350,6 +355,11 @@ export function AnomaliasBoard({
                   </form>
                 ) : (
                   <span className="badge badge-success">Tratada</span>
+                )}
+                {canDelete && (
+                  <a className="btn-secondary" style={{ display: "inline-block" }} href={`/planos-de-acao/novo?anomalia=${selected.id}`}>
+                    Criar plano de ação
+                  </a>
                 )}
                 {canDelete && (
                   <form

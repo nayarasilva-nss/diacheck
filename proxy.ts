@@ -3,9 +3,9 @@ import { isGestorProfile } from "@/lib/auth/profile";
 import type { NextRequest } from "next/server";
 import { decrypt } from "@/lib/auth/session";
 
-const protectedRoutes = ["/hoje", "/inicio", "/dashboard", "/checklist", "/relatorio", "/historico", "/gerenciar", "/perdas", "/filetagem", "/resto-ingesta", "/documentos", "/anomalias", "/diario-de-bordo", "/rotinas", "/resumo-do-dia", "/evolucao", "/exportar"];
+const protectedRoutes = ["/hoje", "/inicio", "/dashboard", "/checklist", "/relatorio", "/historico", "/gerenciar", "/perdas", "/filetagem", "/resto-ingesta", "/documentos", "/anomalias", "/diario-de-bordo", "/rotinas", "/resumo-do-dia", "/evolucao", "/exportar", "/planos-de-acao"];
 const gestorOnlyRoutes = ["/gerenciar", "/exportar"];
-const rhAllowedRoutes = ["/hoje", "/inicio", "/anomalias", "/diario-de-bordo"];
+const rhAllowedRoutes = ["/hoje", "/inicio", "/anomalias", "/diario-de-bordo", "/planos-de-acao"];
 
 export default async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
