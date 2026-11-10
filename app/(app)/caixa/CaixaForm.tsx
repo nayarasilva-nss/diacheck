@@ -58,7 +58,7 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }:
   const enviado: FechamentoCaixa | undefined = dia.fechamentos[0];
   const [caixa, setCaixa] = useState(enviado?.caixa ?? "Caixa");
   const [terminais, setTerminais] = useState<Terminal[]>(() => terminaisDe(enviado));
-  const fora = ["Dinheiro", "Cortesia", ...dia.outras];
+  const fora = ["Dinheiro", "Cortesia", ...dia.outras, ...(dia.outras.includes("Pix chave") ? [] : ["Pix chave"])];
   const [outras, setOutras] = useState<Record<string, string>>(() =>
     Object.fromEntries((enviado?.valores ?? []).filter((v) => v.terminal === "").map((v) => [v.grupo, paraTela(v.valor)])));
   const [vouchers, setVouchers] = useState<Par[]>(() => enviado?.vouchers.length ? enviado.vouchers.map((v) => ({ a: v.codigo, valor: paraTela(v.valor) })) : [{ a: "", valor: "" }]);
@@ -145,7 +145,7 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }:
       {titulo("Outros recebimentos")}
       {fora.map((g) => (
         <Campo key={g} rotulo={g} valor={outras[g] ?? ""} travado={travado}
-          ajuda={g === "Dinheiro" ? "As vendas recebidas em dinheiro" : g === "Cortesia" ? "O que saiu de cortesia" : undefined}
+          ajuda={g === "Dinheiro" ? "As vendas recebidas em dinheiro" : g === "Cortesia" ? "O que saiu de cortesia" : g === "Pix chave" ? "Pix recebido direto na chave, fora da maquininha" : undefined}
           mudar={(v) => setOutras((s) => ({ ...s, [g]: v }))} />
       ))}
 
