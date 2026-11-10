@@ -44,12 +44,12 @@ export async function enviarPush(userIds: number[], aviso: AvisoPush) {
   }
 }
 
-/** Gestores da empresa (quem acompanha tudo). */
+/** Gestores da empresa (gestor e master): quem acompanha tudo. */
 export async function idsDosGestores(organizationId: number, excetoUserId?: number) {
   const rows = await db
     .select({ id: users.id })
     .from(users)
-    .where(and(eq(users.organizationId, organizationId), eq(users.profile, "gestor")));
+    .where(and(eq(users.organizationId, organizationId), inArray(users.profile, ["gestor", "master"])));
   return rows.map((r) => r.id).filter((id) => id !== excetoUserId);
 }
 

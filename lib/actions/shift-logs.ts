@@ -2,6 +2,8 @@
 
 import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { enviarPush, idsDosGestores } from "@/lib/push";
 import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import { shiftLogPendencias, shiftLogs } from "@/lib/db/schema";
@@ -136,6 +138,17 @@ export async function createShiftLog(
   }
 
   await addHistoryEntry(user.id, `Diário de bordo registrado (${setor})`, "completed");
+
+  const orgId = user.organizationId;
+  const situacao = SHIFT_STATUS.find((x) => x.value === statusTurno)?.label ?? statusTurno;
+  after(async () => {
+    await enviarPush(await idsDosGestores(orgId, user.id), {
+      titulo: statusTurno === "estavel" ? "Diário de bordo registrado" : `Diário de bordo: turno ${situacao.toLowerCase()}`,
+      corpo: `${user.name} · ${setor}${pendencias.length ? ` · ${pendencias.length} pendência(s)` : ""}`,
+      url: "/diario-de-bordo",
+      tag: `diario-${inserted.id}`,
+    });
+  });
 
   revalidatePath("/diario-de-bordo");
 }
