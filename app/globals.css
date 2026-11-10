@@ -3063,3 +3063,9 @@ a.plano-item { display: block; }
 .analise-barra { background: var(--neutral-bg); border-radius: 6px; height: 10px; overflow: hidden; }
 .analise-barra i { display: block; height: 100%; background: var(--kenkyo-red); border-radius: 6px; }
 .analise-linha b { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Gerenciar: subabas dentro de cada assunto */
+.gerenciar-subtabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--border); margin: 0 0 18px; }
+.gerenciar-subtabs a { padding: 8px 14px; font-size: 14px; font-weight: 600; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.gerenciar-subtabs a:hover { color: var(--text-strong); }
+.gerenciar-subtabs a.active { color: var(--kenkyo-on-tint); border-bottom-color: var(--kenkyo-red); }
