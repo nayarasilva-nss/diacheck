@@ -24,6 +24,7 @@ type User = {
   jobFunctionId: number | null;
   jobFunctionName: string | null;
   folgaDias: number[];
+  requisicaoUnidadesExtras: number[];
   checklistObrigatorio: boolean;
 };
 
@@ -54,6 +55,7 @@ export function UserRow({
             {" • "}
             {user.jobFunctionName ?? "Sem função"}
             {!user.checklistObrigatorio && " • sem checklist obrigatório"}
+            {user.requisicaoUnidadesExtras.length > 0 && ` • requisições também de ${units.filter((u) => user.requisicaoUnidadesExtras.includes(u.id)).map((u) => u.name).join(", ")}`}
           </p>
         </div>
         <div className="list-item-actions">
@@ -166,6 +168,22 @@ export function UserRow({
             Não aparece em atraso, em &quot;sem checklist hoje&quot; nem nos indicadores, e não vê o card &quot;Checklists em atraso&quot; na
             tela Hoje. Só passa a contar nos indicadores se a pessoa começar um checklist (por exemplo, ao cobrir alguém na operação).
           </p>
+        </div>
+      )}
+      {(user.profile === "gerente" || user.profile === "lider") && (
+        <div className="form-group">
+          <label>Requisições de outras unidades</label>
+          <p className="items-count" style={{ marginBottom: 8 }}>
+            Além da própria unidade, a pessoa também vê, confere e (sendo gerente) confirma o recebimento das requisições destas unidades. Vale para quem confere requisições: gerentes e líderes de Delivery ou de Estoque/Produção.
+          </p>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {units.map((u) => (
+              <label key={u.id} htmlFor={`reqUn-${user.id}-${u.id}`} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                <input type="checkbox" id={`reqUn-${user.id}-${u.id}`} name="reqUnidades" value={u.id} defaultChecked={user.requisicaoUnidadesExtras.includes(u.id)} />
+                {u.name}
+              </label>
+            ))}
+          </div>
         </div>
       )}
       {(user.profile === "gerente" || user.profile === "lider") && (

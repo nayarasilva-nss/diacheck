@@ -31,6 +31,7 @@ export const getCurrentUser = cache(async () => {
       jobFunctionId: users.jobFunctionId,
       jobFunctionName: jobFunctions.name,
       checklistObrigatorio: users.checklistObrigatorio,
+      requisicaoUnidadesExtras: users.requisicaoUnidadesExtras,
       organizationId: users.organizationId,
       organizationName: organizations.name,
       organizationSlug: organizations.slug,

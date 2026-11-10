@@ -21,10 +21,12 @@ export type RequisicaoViewer = {
   profile: string;
   unitId: number | null;
   jobFunctionName: string | null;
+  /** Unidades extras (Gerenciar) cujas requisições a pessoa também vê e confere. */
+  requisicaoUnidadesExtras?: number[];
 };
 
 export type RequisicaoScope =
-  | { mode: "unit"; unitId: number }
+  | { mode: "unit"; unitId: number; unitIds: number[] }
   | { mode: "all" }
   | { mode: "own"; userId: number; unitId: number };
 
@@ -53,7 +55,8 @@ export function resolveRequisicaoScope(
     return { mode: "all" };
   }
   if (canConferirInterna(viewer)) {
-    return { mode: "unit", unitId: viewer.unitId ?? -1 };
+    const principal = viewer.unitId ?? -1;
+    return { mode: "unit", unitId: principal, unitIds: [...new Set([principal, ...(viewer.requisicaoUnidadesExtras ?? [])])] };
   }
   if (tiposPermitidos(viewer).length === 0) return null;
   return { mode: "own", userId: viewer.id, unitId: viewer.unitId ?? -1 };
@@ -104,7 +107,7 @@ export async function getRequisicoesByScope(
   const conditions = [
     eq(requisicoes.organizationId, organizationId),
     scope.mode === "unit"
-      ? eq(requisicoes.unitId, scope.unitId)
+      ? inArray(requisicoes.unitId, scope.unitIds)
       : scope.mode === "own"
         ? eq(requisicoes.requesterId, scope.userId)
         : undefined, // "all": todas as unidades da empresa, sem filtro de solicitante

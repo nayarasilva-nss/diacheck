@@ -26,7 +26,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     requisicao.requesterId === user.id ||
     canConferirRequisicao(user, requisicao.tipo as "interna" | "externa") ||
     scope?.mode === "all" ||
-    (scope?.mode === "unit" && scope.unitId === requisicao.unitId);
+    (scope?.mode === "unit" && scope.unitIds.includes(requisicao.unitId));
   if (!podeVer) return Response.json({ error: "Sem permissão" }, { status: 403 });
 
   const nome = nomeArquivoRequisicao({ tipo: requisicao.tipo, unitName: requisicao.unitName, dia: checklistDayForInstant(requisicao.createdAt) });

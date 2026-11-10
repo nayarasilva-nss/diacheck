@@ -94,6 +94,7 @@ export default async function RequisicoesPage({
       criarTiposPermitidos={criarTiposPermitidos}
       linkCandidatesByUnit={linkCandidatesByUnit}
       fixedUnitId={effectiveUnitId}
+      extraUnitIds={user.requisicaoUnidadesExtras ?? []}
       isGestor={isGestorProfile(user.profile)}
       canReceber={user.profile === "gerente" || isGestorProfile(user.profile)}
       situacaoCompras={situacaoCompras}

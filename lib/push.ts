@@ -1,6 +1,6 @@
 import "server-only";
 import * as webpush from "web-push";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { pushEnvios, pushInscricoes, users } from "@/lib/db/schema";
 
@@ -58,7 +58,7 @@ export async function idsDosGerentesDaUnidade(unitId: number, excetoUserId?: num
   const rows = await db
     .select({ id: users.id })
     .from(users)
-    .where(and(eq(users.unitId, unitId), eq(users.profile, "gerente")));
+    .where(and(or(eq(users.unitId, unitId), sql`${unitId} = ANY(${users.requisicaoUnidadesExtras})`), eq(users.profile, "gerente")));
   return rows.map((r) => r.id).filter((id) => id !== excetoUserId);
 }
 

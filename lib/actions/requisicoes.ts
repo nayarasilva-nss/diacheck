@@ -359,7 +359,7 @@ export async function conferirRequisicao(
   const effectiveUnitId = await resolveEffectiveUnitId(user);
   const scope = resolveRequisicaoScope({ ...user, unitId: effectiveUnitId }, existing.tipo);
   const podeConferir =
-    scope?.mode === "all" || (scope?.mode === "unit" && scope.unitId === existing.unitId);
+    scope?.mode === "all" || (scope?.mode === "unit" && scope.unitIds.includes(existing.unitId));
   if (!podeConferir) {
     return { error: "Você não tem permissão para conferir essa requisição" };
   }
@@ -445,7 +445,9 @@ export async function receberRequisicao(
   if (existing.recebidoEm) return { error: "Essa requisição já foi recebida" };
 
   const effectiveUnitId = await resolveEffectiveUnitId(user);
-  const daUnidade = user.profile === "gerente" && effectiveUnitId === existing.unitId;
+  const daUnidade =
+    user.profile === "gerente" &&
+    (effectiveUnitId === existing.unitId || (user.requisicaoUnidadesExtras ?? []).includes(existing.unitId));
   if (!daUnidade && !isGestorProfile(user.profile)) {
     return { error: "Só o gerente da unidade que pediu pode confirmar o recebimento" };
   }

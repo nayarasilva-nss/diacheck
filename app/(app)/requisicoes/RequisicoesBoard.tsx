@@ -214,6 +214,7 @@ export function RequisicoesBoard({
   criarTiposPermitidos,
   linkCandidatesByUnit,
   fixedUnitId,
+  extraUnitIds = [],
   isGestor,
   canReceber,
   situacaoCompras,
@@ -239,6 +240,7 @@ export function RequisicoesBoard({
   criarTiposPermitidos: ("interna" | "externa")[];
   linkCandidatesByUnit: Record<number, { interna: LinkCandidate[]; externa: LinkCandidate[] }>;
   fixedUnitId: number | null;
+  extraUnitIds?: number[];
   isGestor: boolean;
   canReceber: boolean;
   situacaoCompras: Record<number, SituacaoCompras>;
@@ -659,7 +661,7 @@ export function RequisicoesBoard({
                   Recebido pela unidade em {formatDate(selected.recebidoEm)}
                   {selected.recebimentoObs ? ` — ${selected.recebimentoObs}` : ""}
                 </p>
-              ) : canReceber && (isGestor || selected.unitId === fixedUnitId) ? (
+              ) : canReceber && (isGestor || selected.unitId === fixedUnitId || extraUnitIds.includes(selected.unitId)) ? (
                 <ReceberForm requisicao={selected} onDone={() => setSelectedId(null)} />
               ) : (
                 <p className="items-count">Aguardando a unidade confirmar o recebimento.</p>

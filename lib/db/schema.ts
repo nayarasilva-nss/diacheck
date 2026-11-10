@@ -180,6 +180,8 @@ export const users = pgTable(
     // nos indicadores, a menos que de fato comece um checklist no dia.
     checklistObrigatorio: boolean("checklist_obrigatorio").notNull().default(true),
     folgaDias: integer("folga_dias").array().notNull().default(sql`'{}'::integer[]`),
+    // Unidades além da própria cujas requisições a pessoa também vê e confere (ex.: gerente que atende duas unidades).
+    requisicaoUnidadesExtras: integer("requisicao_unidades_extras").array().notNull().default(sql`'{}'::integer[]`),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [uniqueIndex("users_username_idx").on(table.username)],

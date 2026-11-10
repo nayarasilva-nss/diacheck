@@ -27,6 +27,7 @@ export async function getUsers(organizationId: number) {
       jobFunctionId: users.jobFunctionId,
       jobFunctionName: jobFunctions.name,
       folgaDias: users.folgaDias,
+      requisicaoUnidadesExtras: users.requisicaoUnidadesExtras,
       checklistObrigatorio: users.checklistObrigatorio,
     })
     .from(users)

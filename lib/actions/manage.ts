@@ -105,6 +105,7 @@ export async function updateUser(
   const jobFunctionId = parseOptionalId(formData, "jobFunctionId");
   // a marca vem como "semChecklist" quando marcada; desmarcada não vem no formulário
   const checklistObrigatorio = formData.get("semChecklist") === null;
+  const pedidoExtras = [...new Set(formData.getAll("reqUnidades").map(Number))].filter((n) => Number.isInteger(n) && n > 0);
   const folgaDias = [...new Set(formData.getAll("folgaDias").map(Number))]
     .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
     .sort();
@@ -137,6 +138,12 @@ export async function updateUser(
     return { error: "Já existe um usuário com esse login" };
   }
 
+  // só unidades da própria empresa, e nunca a unidade principal da pessoa
+  const unidadesDaEmpresa = pedidoExtras.length
+    ? await db.select({ id: units.id }).from(units).where(and(eq(units.organizationId, gestor.organizationId), inArray(units.id, pedidoExtras)))
+    : [];
+  const requisicaoUnidadesExtras = unidadesDaEmpresa.map((u) => u.id).filter((uid) => uid !== unitId);
+
   const passwordHash = password ? await bcrypt.hash(password, 10) : undefined;
 
   await db
@@ -148,6 +155,7 @@ export async function updateUser(
       unitId,
       jobFunctionId,
       folgaDias,
+      requisicaoUnidadesExtras,
       checklistObrigatorio,
       ...(passwordHash ? { passwordHash } : {}),
     })

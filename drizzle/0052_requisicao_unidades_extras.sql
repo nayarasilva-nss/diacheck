@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "requisicao_unidades_extras" integer[] DEFAULT '{}'::integer[] NOT NULL;
