@@ -74,10 +74,9 @@ export function ShiftLogsBoard({
       )}
 
       <div className="board-layout">
-        <div className="data-table">
+        <div className="data-table cartoes">
           <div
-            className="data-table-head"
-            style={{ gridTemplateColumns: "78px 1fr 120px 130px" }}
+            className="data-table-head cols-diario"
           >
             <span>Data</span>
             <span>Principal desvio</span>
@@ -90,32 +89,33 @@ export function ShiftLogsBoard({
             records.map((record) => (
               <div
                 key={record.id}
-                className={`data-table-row${selectedId === record.id ? " selected" : ""}`}
-                style={{ gridTemplateColumns: "78px 1fr 120px 130px" }}
+                className={`data-table-row cols-diario${selectedId === record.id ? " selected" : ""}`}
                 onClick={() => setSelectedId((cur) => (cur === record.id ? null : record.id))}
               >
-                <span className="data-table-date">
+                <span className="data-table-date col-data">
                   {new Date(`${record.date}T00:00:00`).toLocaleDateString("pt-BR", {
                     day: "2-digit",
                     month: "2-digit",
                   })}
                 </span>
-                <span>
-                  <span className={`badge ${STATUS_BADGE[record.statusTurno] ?? "badge-neutral"}`}>
+                <span className="col-ocorrido">
+                  <span className={`badge col-tipo ${STATUS_BADGE[record.statusTurno] ?? "badge-neutral"}`}>
                     {record.setor}
                   </span>{" "}
-                  {record.desvioDescricao.length > 60
-                    ? `${record.desvioDescricao.slice(0, 60)}…`
-                    : record.desvioDescricao}
+                  <span className="col-texto">
+                    {record.desvioDescricao.length > 60
+                      ? `${record.desvioDescricao.slice(0, 60)}…`
+                      : record.desvioDescricao}
+                  </span>
                 </span>
-                <span>{STATUS_LABELS[record.statusTurno] ?? record.statusTurno}</span>
-                <span>{record.liderNome}</span>
+                <span className="col-setor">{STATUS_LABELS[record.statusTurno] ?? record.statusTurno}</span>
+                <span className="col-unidade">{record.liderNome}</span>
               </div>
             ))
           )}
         </div>
 
-        <div className="detail-panel">
+        <div className={`detail-panel${selected ? " tela-cheia" : " vazio"}`}>
           {selected ? (
             <>
               <div className="detail-panel-header">

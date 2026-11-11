@@ -186,7 +186,7 @@ export function AnomaliasBoard({
         <span className="pill-count">{records.length} registros</span>
       </div>
 
-      <div className="summary-cards">
+      <div className="summary-cards compactos">
         <div className="summary-card">
           <div className="summary-card-label">Tipo mais frequente</div>
           <div className="summary-card-value">{summary.tipoTop?.value ?? "—"}</div>
@@ -209,10 +209,9 @@ export function AnomaliasBoard({
       </div>
 
       <div className="board-layout">
-        <div className="data-table">
+        <div className="data-table cartoes">
           <div
-            className="data-table-head"
-            style={{ gridTemplateColumns: "78px 1fr 120px 118px 96px" }}
+            className="data-table-head cols-anomalias"
           >
             <span>Data</span>
             <span>Ocorrido</span>
@@ -226,27 +225,26 @@ export function AnomaliasBoard({
             records.map((record) => (
               <div
                 key={record.id}
-                className={`data-table-row${selectedId === record.id ? " selected" : ""}`}
-                style={{ gridTemplateColumns: "78px 1fr 120px 118px 96px" }}
+                className={`data-table-row cols-anomalias${selectedId === record.id ? " selected" : ""}`}
                 onClick={() => openDetail(record.id)}
               >
-                <span className="data-table-date">
+                <span className="data-table-date col-data">
                   {new Date(`${record.date}T00:00:00`).toLocaleDateString("pt-BR", {
                     day: "2-digit",
                     month: "2-digit",
                   })}
                 </span>
-                <span>
+                <span className="col-ocorrido">
                   {record.tipos[0] && (
-                    <span className={`badge ${TYPE_BADGE[record.tipos[0]] ?? "badge-neutral"}`}>
+                    <span className={`badge col-tipo ${TYPE_BADGE[record.tipos[0]] ?? "badge-neutral"}`}>
                       {record.tipos[0]}
                     </span>
                   )}{" "}
-                  {firstSentence(record.oQueAconteceu)}
+                  <span className="col-texto">{firstSentence(record.oQueAconteceu)}</span>
                 </span>
-                <span>{record.setores[0] ?? "—"}</span>
-                <span>{record.unitName ?? "—"}</span>
-                <span>
+                <span className="col-setor">{record.setores[0] ?? "—"}</span>
+                <span className="col-unidade">{record.unitName ?? "—"}</span>
+                <span className="col-origem">
                   <span className={`badge ${record.sourceChecklistCompletionId ? "badge-info" : "badge-neutral"}`}>
                     {record.sourceChecklistCompletionId ? "Checklist" : "Manual"}
                   </span>
@@ -256,7 +254,7 @@ export function AnomaliasBoard({
           )}
         </div>
 
-        <div className={`detail-panel${creating ? " tela-cheia" : ""}`}>
+        <div className={`detail-panel${creating || selected ? " tela-cheia" : " vazio"}`}>
           {creating ? (
             <>
               <div className="tela-topo">
