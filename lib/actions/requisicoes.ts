@@ -517,13 +517,13 @@ export async function receberRequisicao(
 }
 
 /**
- * Gestor: confere de uma vez as requisições INTERNAS abertas de uma unidade, dando como conferido o que foi pedido.
+ * Master (donos da plataforma): confere de uma vez as requisições INTERNAS abertas de uma unidade, dando como conferido o que foi pedido.
  * Sem `executar`, só conta (para a tela pedir a confirmação). Requisições sem itens ficam de fora, para o Gestor
  * excluir pela tela.
  */
 export async function conferirInternasEmLote(unidadeId: number, executar: boolean): Promise<{ error?: string; total?: number; feitas?: number }> {
   const user = await getCurrentUser();
-  if (!isGestorProfile(user.profile) || !user.organizationId) return { error: "Só o Gestor confere em lote." };
+  if (user.profile !== "master" || !user.organizationId) return { error: "A conferência em lote é restrita ao perfil master." };
   const abertas = await db
     .select({ id: requisicoes.id })
     .from(requisicoes)

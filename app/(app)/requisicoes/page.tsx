@@ -96,6 +96,7 @@ export default async function RequisicoesPage({
       fixedUnitId={effectiveUnitId}
       extraUnitIds={user.requisicaoUnidadesExtras ?? []}
       isGestor={isGestorProfile(user.profile)}
+      isMaster={user.profile === "master"}
       canReceber={user.profile === "gerente" || isGestorProfile(user.profile)}
       situacaoCompras={situacaoCompras}
     />

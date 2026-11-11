@@ -249,6 +249,7 @@ export function RequisicoesBoard({
   fixedUnitId,
   extraUnitIds = [],
   isGestor,
+  isMaster = false,
   canReceber,
   situacaoCompras,
 }: {
@@ -275,6 +276,7 @@ export function RequisicoesBoard({
   fixedUnitId: number | null;
   extraUnitIds?: number[];
   isGestor: boolean;
+  isMaster?: boolean;
   canReceber: boolean;
   situacaoCompras: Record<number, SituacaoCompras>;
 }) {
@@ -400,7 +402,7 @@ export function RequisicoesBoard({
         )}
       </div>
 
-      {isGestor && tipo !== "externa" && units.length > 0 && (
+      {isMaster && tipo !== "externa" && units.length > 0 && (
         <div style={{ marginBottom: 14 }}><ConferirEmLote units={units} onDone={() => router.refresh()} /></div>
       )}
 
