@@ -447,3 +447,56 @@ export async function deleteChecklistType(formData: FormData) {
     .where(and(eq(checklistTypes.id, id), eq(checklistTypes.organizationId, gestor.organizationId)));
   revalidateManageViews();
 }
+
+export async function duplicateChecklistType(formData: FormData) {
+  const gestor = await requireGestor();
+  const id = Number(formData.get("id"));
+  if (!id || !gestor.organizationId) return;
+
+  const [origem] = await db
+    .select()
+    .from(checklistTypes)
+    .where(and(eq(checklistTypes.id, id), eq(checklistTypes.organizationId, gestor.organizationId)));
+  if (!origem) return;
+
+  const [copia] = await db
+    .insert(checklistTypes)
+    .values({
+      organizationId: gestor.organizationId,
+      name: `${origem.name} (cópia)`.slice(0, 200),
+      description: origem.description,
+      deadlineTime: origem.deadlineTime,
+      type: origem.type,
+      jobFunctionId: origem.jobFunctionId,
+      assignedUserId: origem.assignedUserId,
+    })
+    .returning({ id: checklistTypes.id });
+
+  const itens = await db
+    .select()
+    .from(checklistTypeItems)
+    .where(eq(checklistTypeItems.checklistTypeId, id))
+    .orderBy(asc(checklistTypeItems.position));
+  if (itens.length > 0) {
+    await db.insert(checklistTypeItems).values(
+      itens.map((item, position) => ({
+        checklistTypeId: copia.id,
+        label: item.label,
+        requiresPhoto: item.requiresPhoto,
+        position,
+      })),
+    );
+  }
+
+  const pre = await db
+    .select()
+    .from(checklistTypePrerequisites)
+    .where(eq(checklistTypePrerequisites.checklistTypeId, id));
+  if (pre.length > 0) {
+    await db.insert(checklistTypePrerequisites).values(
+      pre.map((r) => ({ checklistTypeId: copia.id, requiresChecklistTypeId: r.requiresChecklistTypeId })),
+    );
+  }
+
+  revalidateManageViews();
+}

@@ -10,12 +10,16 @@ export function AddChecklistTypeForm({
   jobFunctions,
   users,
   allChecklistTypes,
+  startOpen = false,
+  onDone,
 }: {
   jobFunctions: Option[];
   users: Option[];
   allChecklistTypes: Option[];
+  startOpen?: boolean;
+  onDone?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -39,6 +43,7 @@ export function AddChecklistTypeForm({
         setError(undefined);
         setOpen(false);
         formRef.current?.reset();
+        onDone?.();
       }
     });
   }
@@ -121,7 +126,10 @@ export function AddChecklistTypeForm({
         <button
           type="button"
           className="btn-cancel"
-          onClick={() => setOpen(false)}
+          onClick={() => {
+            setOpen(false);
+            onDone?.();
+          }}
         >
           Cancelar
         </button>

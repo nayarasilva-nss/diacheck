@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateChecklistType, deleteChecklistType } from "@/lib/actions/manage";
+import { updateChecklistType, deleteChecklistType, duplicateChecklistType } from "@/lib/actions/manage";
 import { DeleteButton } from "./DeleteButton";
 import { ChecklistItemsEditor, type EditableItem } from "./ChecklistItemsEditor";
 
@@ -29,43 +29,73 @@ export function ChecklistTypeRow({
   jobFunctions,
   users,
   allChecklistTypes,
+  forceOpen = false,
 }: {
   checklistType: ChecklistType;
   jobFunctions: Option[];
   users: Option[];
   allChecklistTypes: Option[];
+  forceOpen?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
+  const [aberto, setAberto] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
   if (!editing) {
+    const mostrar = aberto || forceOpen;
+    const pre = allChecklistTypes.filter((c) => checklistType.prerequisiteIds.includes(c.id));
+    const fotos = checklistType.items.filter((i) => i.requiresPhoto).length;
     return (
-      <div className="list-item">
-        <div className="info">
-          <h4>{checklistType.name}</h4>
-          <p>
-            {checklistType.itemCount} tarefas • {TYPE_LABELS[checklistType.type]} •{" "}
-            {checklistType.jobFunctionName ?? "Todas as funções"}
-            {checklistType.assignedUserName
-              ? ` • Atribuído a: ${checklistType.assignedUserName}`
-              : ""}
-          </p>
-        </div>
-        <div className="list-item-actions">
+      <div className="modelo-card">
+        <div className="modelo-card-topo">
           <button
-            className="btn-small"
             type="button"
-            onClick={() => setEditing(true)}
+            className="modelo-card-titulo"
+            aria-expanded={mostrar}
+            onClick={() => setAberto((v) => !v)}
           >
-            Editar
+            <span className="modelo-seta" aria-hidden="true">{mostrar ? "▾" : "▸"}</span>
+            <span className="modelo-nome">{checklistType.name}</span>
           </button>
-          <DeleteButton
-            action={deleteChecklistType}
-            id={checklistType.id}
-            confirmText={`Deletar o modelo "${checklistType.name}"?`}
-          />
+          <div className="list-item-actions">
+            <button className="btn-small" type="button" onClick={() => setEditing(true)}>
+              Editar
+            </button>
+            <form action={duplicateChecklistType}>
+              <input type="hidden" name="id" value={checklistType.id} />
+              <button className="btn-small" type="submit" title="Cria uma cópia para ajustar">
+                Duplicar
+              </button>
+            </form>
+            <DeleteButton
+              action={deleteChecklistType}
+              id={checklistType.id}
+              confirmText={`Deletar o modelo "${checklistType.name}"?`}
+            />
+          </div>
         </div>
+        <div className="modelo-badges">
+          <span className={`modelo-badge ${checklistType.type}`}>{TYPE_LABELS[checklistType.type]}</span>
+          <span className="modelo-badge">{checklistType.itemCount} tarefas</span>
+          {fotos > 0 && <span className="modelo-badge">{fotos} com foto</span>}
+          {checklistType.deadlineTime && <span className="modelo-badge">até {checklistType.deadlineTime.slice(0, 5)}</span>}
+          {checklistType.assignedUserName && <span className="modelo-badge">só {checklistType.assignedUserName}</span>}
+          {pre.length > 0 && <span className="modelo-badge">depois de {pre.map((p) => p.name).join(", ")}</span>}
+        </div>
+        {mostrar && (
+          <div className="modelo-detalhe">
+            {checklistType.description && <p className="items-count">{checklistType.description}</p>}
+            <ol className="modelo-tarefas">
+              {checklistType.items.map((i, n) => (
+                <li key={n}>
+                  {i.label}
+                  {i.requiresPhoto && <em> · foto</em>}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
       </div>
     );
   }

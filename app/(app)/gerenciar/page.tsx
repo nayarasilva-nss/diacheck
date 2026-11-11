@@ -10,8 +10,6 @@ import { deleteUnit } from "@/lib/actions/manage";
 import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
 import { AddUserForm } from "./AddUserForm";
 import { UserRow } from "./UserRow";
-import { AddChecklistTypeForm } from "./AddChecklistTypeForm";
-import { ChecklistTypeRow } from "./ChecklistTypeRow";
 import { AddUnitForm } from "./AddUnitForm";
 import { AddJobFunctionForm } from "./AddJobFunctionForm";
 import { JobFunctionRow } from "./JobFunctionRow";
@@ -30,6 +28,7 @@ import { getAuditTemplate } from "@/lib/data/audits";
 import { ErpPainel } from "./ErpPainel";
 import { EscalaPainel } from "./EscalaPainel";
 import { ImportarModelos } from "./ImportarModelos";
+import { ModelosBoard } from "./ModelosBoard";
 
 // Abas agrupadas por assunto. As chaves (?tab=...) continuam as mesmas, então links antigos seguem valendo.
 type Grupo = { key: string; label: string; ajuda: string; tabs: { key: string; label: string }[] };
@@ -156,29 +155,7 @@ export default async function GerenciarPage({
       {tab === "modelos" && <ImportarModelos />}
 
       {tab === "modelos" && (
-        <div className="board-layout">
-          <div className="today-card">
-            <div className="today-card-title" style={{ marginBottom: 14 }}>
-              Modelos de Checklist · {checklistTypes.length}
-            </div>
-            {checklistTypes.map((c) => (
-              <ChecklistTypeRow
-                key={c.id}
-                checklistType={c}
-                jobFunctions={jobFunctions}
-                users={users}
-                allChecklistTypes={checklistTypes}
-              />
-            ))}
-          </div>
-          <div className="detail-panel" style={{ minHeight: "auto" }}>
-            <AddChecklistTypeForm
-              jobFunctions={jobFunctions}
-              users={users}
-              allChecklistTypes={checklistTypes}
-            />
-          </div>
-        </div>
+        <ModelosBoard modelos={checklistTypes} jobFunctions={jobFunctions} users={users} />
       )}
 
       {tab === "formularios" && (

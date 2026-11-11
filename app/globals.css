@@ -3136,3 +3136,35 @@ a.plano-item { display: block; }
 @media (max-width: 700px) {
   .summary-cards[style]:not(.compactos) { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important; gap: 10px; }
 }
+
+/* ===== Gerenciar › Modelos de checklist ===== */
+.modelos-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+.modelos-toolbar .modelos-busca { flex: 1 1 220px; min-width: 0; }
+.modelos-toolbar select { flex: 0 1 220px; min-width: 0; }
+.modelos-toolbar .filter-pills { margin: 0; }
+.modelos-toolbar .modelos-novo { margin-left: auto; white-space: nowrap; }
+.modelos-resumo { display: flex; gap: 12px; align-items: center; margin: 4px 0 12px; }
+.link-btn { background: none; border: 0; padding: 0; color: var(--kenkyo-on-tint); font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; }
+.modelos-grupo { margin-bottom: 22px; }
+.modelos-grupo-titulo { display: flex; gap: 8px; align-items: baseline; font-size: 13px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.modelos-grupo-titulo span { font-weight: 600; color: var(--text-faint); }
+.modelo-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; }
+.modelo-card-topo { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.modelo-card-titulo { flex: 1 1 200px; min-width: 0; display: flex; gap: 8px; align-items: center; background: none; border: 0; padding: 6px 0; min-height: 44px; font: inherit; color: var(--text-strong); text-align: left; cursor: pointer; }
+.modelo-nome { font-weight: 800; font-size: 15px; overflow-wrap: anywhere; }
+.modelo-seta { color: var(--text-faint); width: 14px; flex-shrink: 0; }
+.modelo-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 2px 22px; }
+.modelo-badge { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--control); border: 1px solid var(--border); color: var(--text-muted); }
+.modelo-badge.daily { color: var(--kenkyo-on-tint); }
+.modelo-badge.weekly { color: var(--text-strong); }
+.modelo-detalhe { margin: 10px 0 4px 22px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.modelo-tarefas { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }
+.modelo-tarefas em { color: var(--text-faint); font-style: normal; font-size: 12px; }
+.item-editor-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.item-editor-colar { display: grid; gap: 8px; margin-top: 10px; }
+.item-editor-colar textarea { width: 100%; padding: 10px; border: 2px solid var(--border); border-radius: 8px; font: inherit; font-size: 14px; background: var(--surface); color: var(--text); }
+.modelos-board .inline-form { max-width: 720px; }
+@media (max-width: 700px) {
+  .modelos-toolbar select, .modelos-toolbar .modelos-novo { flex: 1 1 100%; margin-left: 0; }
+  .modelo-badges, .modelo-detalhe { margin-left: 0; }
+}
