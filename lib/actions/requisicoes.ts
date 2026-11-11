@@ -515,3 +515,36 @@ export async function receberRequisicao(
   await addHistoryEntry(user.id, `Requisição externa recebida (unidade ${existing.unitId})`, "completed");
   revalidateRequisicaoViews();
 }
+
+/**
+ * Gestor: confere de uma vez as requisições INTERNAS abertas de uma unidade, dando como conferido o que foi pedido.
+ * Sem `executar`, só conta (para a tela pedir a confirmação). Requisições sem itens ficam de fora, para o Gestor
+ * excluir pela tela.
+ */
+export async function conferirInternasEmLote(unidadeId: number, executar: boolean): Promise<{ error?: string; total?: number; feitas?: number }> {
+  const user = await getCurrentUser();
+  if (!isGestorProfile(user.profile) || !user.organizationId) return { error: "Só o Gestor confere em lote." };
+  const abertas = await db
+    .select({ id: requisicoes.id })
+    .from(requisicoes)
+    .where(and(eq(requisicoes.organizationId, user.organizationId), eq(requisicoes.unitId, unidadeId), eq(requisicoes.tipo, "interna"), eq(requisicoes.status, "aberta")));
+  const ids = abertas.map((r) => r.id);
+  const itens = ids.length ? await db.select().from(requisicaoItens).where(inArray(requisicaoItens.requisicaoId, ids)) : [];
+  const comItens = ids.filter((id) => itens.some((i) => i.requisicaoId === id));
+  if (!executar) return { total: comItens.length };
+  let feitas = 0;
+  for (const id of comItens) {
+    // confere de novo só se ainda está aberta (outra pessoa pode ter conferido no meio)
+    const [ainda] = await db.select({ status: requisicoes.status }).from(requisicoes).where(eq(requisicoes.id, id)).limit(1);
+    if (ainda?.status !== "aberta") continue;
+    for (const item of itens.filter((i) => i.requisicaoId === id)) {
+      await db.update(requisicaoItens).set({ qtdConferida: Number(item.qtdPedida).toFixed(3) }).where(eq(requisicaoItens.id, item.id));
+    }
+    await db.update(requisicoes).set({ status: "conferida", conferidoPorId: user.id, concluidoEm: new Date(), erpStatus: "pendente" }).where(eq(requisicoes.id, id));
+    sincronizarComErp(id, user.organizationId);
+    feitas++;
+  }
+  await addHistoryEntry(user.id, `Conferência em lote: ${feitas} requisições internas (unidade ${unidadeId})`, "completed");
+  revalidateRequisicaoViews();
+  return { total: comItens.length, feitas };
+}

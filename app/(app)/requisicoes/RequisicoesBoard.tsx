@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   cancelRequisicao,
   conferirRequisicao,
+  conferirInternasEmLote,
   deleteRequisicao,
   receberRequisicao,
   updateRequisicaoTipo,
@@ -199,6 +200,38 @@ function ReceberForm({ requisicao, onDone }: { requisicao: Requisicao; onDone: (
   );
 }
 
+function ConferirEmLote({ units, onDone }: { units: { id: number; name: string }[]; onDone: () => void }) {
+  const [aberto, setAberto] = useState(false);
+  const [unidade, setUnidade] = useState<number | "">("");
+  const [msg, setMsg] = useState<string | undefined>();
+  const [ocupado, iniciar] = useTransition();
+  function conferir() {
+    if (unidade === "") return;
+    iniciar(async () => {
+      const previa = await conferirInternasEmLote(unidade, false);
+      if (previa.error) return setMsg(previa.error);
+      if (!previa.total) return setMsg("Nenhuma requisição interna aberta (com itens) nesta unidade.");
+      const nome = units.find((u) => u.id === unidade)?.name ?? "";
+      if (!confirm(`Conferir ${previa.total} requisição(ões) interna(s) abertas de ${nome}, dando como conferido o que foi pedido? Isso baixa o estoque no ERP e não dá para desfazer em lote.`)) return;
+      const r = await conferirInternasEmLote(unidade, true);
+      setMsg(r.error ?? `${r.feitas} requisição(ões) conferida(s).`);
+      onDone();
+    });
+  }
+  if (!aberto) return <button type="button" className="btn-secondary" onClick={() => setAberto(true)}>Conferir todas as abertas</button>;
+  return (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+      <select value={unidade} onChange={(e) => { setUnidade(e.target.value ? Number(e.target.value) : ""); setMsg(undefined); }} aria-label="Unidade" style={{ width: "auto" }} disabled={ocupado}>
+        <option value="">Escolha a unidade</option>
+        {units.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+      </select>
+      <button type="button" className="btn-primary" onClick={conferir} disabled={unidade === "" || ocupado}>{ocupado ? "Conferindo…" : "Conferir internas abertas"}</button>
+      <button type="button" className="btn-secondary" onClick={() => setAberto(false)} disabled={ocupado}>Fechar</button>
+      {msg && <span className="items-count" style={{ margin: 0 }}>{msg}</span>}
+    </div>
+  );
+}
+
 export function RequisicoesBoard({
   records,
   tipo,
@@ -366,6 +399,10 @@ export function RequisicoesBoard({
           </button>
         )}
       </div>
+
+      {isGestor && tipo !== "externa" && units.length > 0 && (
+        <div style={{ marginBottom: 14 }}><ConferirEmLote units={units} onDone={() => router.refresh()} /></div>
+      )}
 
       {tabs.length > 1 && (
         <div className="filter-pills">
