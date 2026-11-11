@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { canFecharCaixa } from "@/lib/auth/caixa";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { unidadeDaContagem } from "@/lib/data/contagem";
-import { enviarCaixaAoErp } from "@/lib/erp/caixa";
+import { caixaNoErp, enviarCaixaAoErp } from "@/lib/erp/caixa";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { ligacaoDaEmpresa } from "@/lib/erp/integracao";
 
 export type ResultadoCaixa = { error?: string; ok?: string };
@@ -36,7 +37,16 @@ export async function enviarFechamentoCaixa(unidadeId: number, f: FechamentoForm
   const vendidos = f.vouchersVendidos.filter((v) => v.codigo.trim() !== "" || v.valor.trim() !== "");
   const vendaInvalida = vendidos.find((v) => v.codigo.trim() === "" || v.valor.trim() === "" || !dinheiro(v.valor) || !["Dinheiro", "Cartão", "Pix"].includes(v.forma));
   if (vendaInvalida) return { error: "Em cada aquisição de voucher, informe o código, o valor e como o cliente pagou." };
-  const caixa = f.caixa.trim().slice(0, 40) || "Caixa";
+  const caixa = f.caixa.trim().slice(0, 40) || `Caixa ${user.name.split(" ")[0]}`;
+  const ligacao = await ligacaoDaEmpresa(user.organizationId);
+  // O ERP identifica o caixa por unidade + dia + nome. Dois caixas com o mesmo nome no mesmo dia viram um só, e o
+  // segundo apagaria o primeiro: por isso não deixa mandar por cima do caixa de outra pessoa.
+  try {
+    const dia = await caixaNoErp(unidade.cnpj, f.data, ligacao);
+    const dono = dia.fechamentos.find((x) => x.caixa.trim().toLowerCase() === caixa.toLowerCase());
+    if (dono && dono.quem_fechou && dono.quem_fechou !== user.name && !isGestorProfile(user.profile))
+      return { error: `Já existe um caixa "${dono.caixa}" enviado por ${dono.quem_fechou} neste dia. Dê outro nome ao seu caixa (por exemplo, "Caixa ${user.name.split(" ")[0]}") para não apagar o dele.` };
+  } catch { /* sem resposta do ERP agora: o envio abaixo diz o erro */ }
   try {
     await enviarCaixaAoErp({
       id_externo: `${unidade.cnpj}:${f.data}:${caixa.toLowerCase()}`,
@@ -48,7 +58,7 @@ export async function enviarFechamentoCaixa(unidadeId: number, f: FechamentoForm
       saidas: f.saidas.filter((s) => s.valor.trim() !== "" || s.finalidade.trim() !== "").map((s) => ({ finalidade: s.finalidade.trim(), valor: s.valor.trim() })),
       vouchers_vendidos: vendidos.map((v) => ({ codigo: v.codigo.trim().toUpperCase(), valor: v.valor.trim(), forma: v.forma, cliente: v.cliente.trim(), validade: v.validade.trim() })),
       observacao: f.observacao.trim().slice(0, 1000),
-    }, await ligacaoDaEmpresa(user.organizationId));
+    }, ligacao);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Não foi possível enviar o fechamento." };
   }

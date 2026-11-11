@@ -53,10 +53,12 @@ function terminaisDe(f: FechamentoCaixa | undefined): Terminal[] {
  * Pix, o voucher com o código, o dinheiro das vendas, a cortesia, as saídas pagas com o dinheiro do caixa, o
  * suprimento, a sangria (vai para o cofre) e o troco final (fica na gaveta).
  */
-export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }: { unidadeId: number; data: string; hoje: string; desde: string; dia: CaixaDoDia; previa?: boolean }) {
+export function CaixaForm({ unidadeId, data, hoje, desde, dia, quem, previa = false }: { unidadeId: number; quem: string; data: string; hoje: string; desde: string; dia: CaixaDoDia; previa?: boolean }) {
   const router = useRouter();
-  const enviado: FechamentoCaixa | undefined = dia.fechamentos[0];
-  const [caixa, setCaixa] = useState(enviado?.caixa ?? "Caixa");
+  // só o caixa desta pessoa: o de outro colega no mesmo dia não pode aparecer aqui nem ser sobrescrito
+  const enviado: FechamentoCaixa | undefined = dia.fechamentos.find((f) => f.quem_fechou === quem);
+  const dosOutros = dia.fechamentos.filter((f) => f !== enviado);
+  const [caixa, setCaixa] = useState(enviado?.caixa ?? `Caixa ${quem.split(" ")[0]}`);
   const [terminais, setTerminais] = useState<Terminal[]>(() => terminaisDe(enviado));
   const fora = ["Dinheiro", "Cortesia", ...dia.outras, ...(dia.outras.includes("Pix chave") ? [] : ["Pix chave"])];
   const [outras, setOutras] = useState<Record<string, string>>(() =>
@@ -116,6 +118,11 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }:
         <input value={caixa} onChange={(e) => setCaixa(e.target.value)} aria-label="Qual caixa" placeholder="Caixa" style={{ width: 160 }} disabled={enviando || travado} />
         {enviado && <span className="items-count" style={{ margin: 0 }}>Enviado por {enviado.quem_fechou ?? "—"}{travado ? " · conferido pelo financeiro" : " · pode corrigir"}</span>}
       </div>
+      {dosOutros.length > 0 && (
+        <p className="items-count" style={{ margin: "0 0 8px" }}>
+          Outros caixas deste dia: {dosOutros.map((f) => `${f.caixa} (${f.quem_fechou ?? "—"})`).join(", ")}. Cada pessoa fecha o seu.
+        </p>
+      )}
       {travado && <div className="empty-state" style={{ marginBottom: 12 }}>Este caixa já foi conferido pelo financeiro. Para corrigir, fale com o financeiro.</div>}
 
       {titulo("Recebimentos por adquirente (total de cada bandeira)")}

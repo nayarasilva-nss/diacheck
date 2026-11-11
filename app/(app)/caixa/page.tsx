@@ -57,7 +57,7 @@ export default async function CaixaPage({ searchParams }: { searchParams: Promis
               {desde ? `O fechamento pelo app começa em ${formatar(desde)}.` : "O fechamento pelo app ainda não foi liberado."} Aqui você vê e preenche o formulário como ele vai ficar, mas nada é enviado ao ERP nem entra no cofre.
             </div>
           </div>
-          <CaixaForm key={`previa-${unidade.id}-${data}`} unidadeId={unidade.id} data={data} hoje={hoje} desde={desde ?? hoje} dia={dia} previa />
+          <CaixaForm key={`previa-${unidade.id}-${data}`} unidadeId={unidade.id} data={data} hoje={hoje} desde={desde ?? hoje} dia={dia} quem={user.name} previa />
         </>
       ) : !liberado ? (
         <div className="empty-state">
@@ -69,7 +69,7 @@ export default async function CaixaPage({ searchParams }: { searchParams: Promis
           <Link href={link(unidade.id, hoje)}>Ir para hoje</Link>
         </div>
       ) : (
-        <CaixaForm key={`${unidade.id}-${data}`} unidadeId={unidade.id} data={data} hoje={hoje} desde={desde} dia={dia} />
+        <CaixaForm key={`${unidade.id}-${data}`} unidadeId={unidade.id} data={data} hoje={hoje} desde={desde} dia={dia} quem={user.name} />
       )}
     </>
   );
