@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RotulosTabelas } from "../RotulosTabelas";
 import { isGestorProfile } from "@/lib/auth/profile";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
@@ -197,7 +198,8 @@ async function FiletagemTab({
         </div>
       </div>
 
-      <div className="data-table">
+      <RotulosTabelas />
+      <div className="data-table rotulos">
         <div
           className="data-table-head"
           style={{ gridTemplateColumns: "78px 1fr 110px 110px 130px 90px" }}
@@ -284,7 +286,8 @@ async function RestoIngestaTab({
         </div>
       </div>
 
-      <div className="data-table">
+      <RotulosTabelas />
+      <div className="data-table rotulos">
         <div
           className="data-table-head"
           style={{ gridTemplateColumns: "78px 1fr 130px 130px 130px" }}
@@ -367,7 +370,8 @@ async function UtensilBreakageTab({
         </div>
       </div>
 
-      <div className="data-table">
+      <RotulosTabelas />
+      <div className="data-table rotulos">
         <div
           className="data-table-head"
           style={{ gridTemplateColumns: "78px 1fr 100px 1fr 130px" }}
@@ -448,7 +452,8 @@ async function DeliveryErrorTab({
         </div>
       </div>
 
-      <div className="data-table">
+      <RotulosTabelas />
+      <div className="data-table rotulos">
         <div
           className="data-table-head"
           style={{ gridTemplateColumns: "78px 1fr 100px 100px 90px" }}

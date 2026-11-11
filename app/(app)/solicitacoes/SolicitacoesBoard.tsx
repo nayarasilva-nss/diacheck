@@ -181,8 +181,8 @@ export function SolicitacoesBoard({
         )}
       </div>
 
-      <div className="data-table">
-        <div className="data-table-head" style={{ gridTemplateColumns: "100px 1fr 1fr 220px" }}>
+      <div className="data-table cartoes">
+        <div className="data-table-head cols-solicitacoes">
           <span>Data</span>
           <span>Solicitante</span>
           <span>Unidade</span>
@@ -194,14 +194,13 @@ export function SolicitacoesBoard({
           records.map((r) => (
             <div
               key={r.id}
-              className={`data-table-row${selectedId === r.id ? " selected" : ""}`}
-              style={{ gridTemplateColumns: "100px 1fr 1fr 220px" }}
+              className={`data-table-row cols-solicitacoes${selectedId === r.id ? " selected" : ""}`}
               onClick={() => openDetail(r.id)}
             >
-              <span className="data-table-date">{formatDate(r.date)}</span>
-              <span>{r.requesterName}</span>
-              <span>{r.unitName}</span>
-              <span>
+              <span className="data-table-date col-data">{formatDate(r.date)}</span>
+              <span className="col-texto">{r.requesterName}</span>
+              <span className="col-unidade">{r.unitName}</span>
+              <span className="col-tipo">
                 {r.urgente && <span className="badge badge-danger">URGENTE</span>}{" "}
                 <span className={`badge ${RESUMO_BADGE[r.resumo.variant]}`}>{r.resumo.label}</span>
               </span>
