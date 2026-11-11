@@ -22,7 +22,8 @@
     "db:add-diario-bordo-item": "dotenv -e .env.local -- tsx scripts/add-diario-bordo-item-to-fechamento.ts",
     "db:add-requisicao-insumos-item": "dotenv -e .env.local -- tsx scripts/add-requisicao-insumos-item.ts",
     "db:seed:catalog-produtos": "dotenv -e .env.local -- tsx scripts/seed-catalog-produtos.ts",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "db:requisicoes-vazias": "dotenv -e .env.local -- tsx scripts/requisicoes-vazias.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "4.9.0",

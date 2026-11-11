@@ -1,7 +1,7 @@
 "use server";
 
 import { isGestorProfile } from "@/lib/auth/profile";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { cancelarExcluidaNoErp, definirDestinos, enviarPendentesAoErp, enviarRequisicaoAoErp } from "@/lib/erp/integracao";
@@ -12,7 +12,7 @@ import { canConferirRequisicao, canRequestExterna, canRequestInterna } from "@/l
 import type { RequisicaoTipo } from "@/lib/auth/requisicoes";
 import { db } from "@/lib/db";
 import { enviarPush, idsDosGerentesDaUnidade, idsDosGestores } from "@/lib/push";
-import { requisicoes, requisicaoItens, catalogUnitMeasureEnum } from "@/lib/db/schema";
+import { requisicoes, requisicaoItens, catalogItems, catalogUnitMeasureEnum } from "@/lib/db/schema";
 import { addHistoryEntry } from "@/lib/data/history";
 import { resolveRequisicaoScope, linkWindowCutoff } from "@/lib/data/requisicoes";
 import { checklistDayForInstant, checklistDayISO } from "@/lib/date-utils";
@@ -83,6 +83,41 @@ function parseItens(formData: FormData): ParsedItem[] {
     );
 }
 
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Grava os itens da requisição. O catalogItemId vem do navegador, de um
+ * catálogo carregado quando a tela abriu: se nesse meio-tempo o item saiu
+ * do catálogo (ex: o espelho do ERP juntou ou excluiu duplicados), a
+ * chave estrangeira recusava o insert. Como o cabeçalho já tinha sido
+ * gravado, sobrava uma requisição sem itens e a pessoa via "confira a
+ * internet", tentava de novo e criava outra vazia. Item que não existe
+ * mais vai sem vínculo (o nome e a unidade ficam gravados no item).
+ */
+async function gravarItens(tx: Tx, requisicaoId: number, organizationId: number, itens: ParsedItem[]) {
+  const ids = [...new Set(itens.map((i) => i.catalogItemId).filter((id): id is number => id !== null))];
+  const existentes = ids.length
+    ? new Set(
+        (
+          await tx
+            .select({ id: catalogItems.id })
+            .from(catalogItems)
+            .where(and(inArray(catalogItems.id, ids), eq(catalogItems.organizationId, organizationId)))
+        ).map((r) => r.id),
+      )
+    : new Set<number>();
+
+  await tx.insert(requisicaoItens).values(
+    itens.map((item) => ({
+      requisicaoId,
+      catalogItemId: item.catalogItemId !== null && existentes.has(item.catalogItemId) ? item.catalogItemId : null,
+      nome: item.nome.slice(0, 255),
+      unidadeMedida: item.unidadeMedida,
+      qtdPedida: item.qtdPedida.toFixed(3),
+    })),
+  );
+}
+
 export async function createRequisicao(
   _prevState: ActionState,
   formData: FormData,
@@ -147,30 +182,33 @@ export async function createRequisicao(
     }
   }
 
-  const [requisicao] = await db
-    .insert(requisicoes)
-    .values({
-      organizationId: user.organizationId,
-      tipo,
-      unitId,
-      requesterId: user.id,
-      urgente,
-      observacao,
-      relatedRequisicaoId,
-      // lançou = o ERP já vê como aberta
-      erpStatus: "pendente",
-    })
-    .returning({ id: requisicoes.id });
-
-  await db.insert(requisicaoItens).values(
-    itens.map((item) => ({
-      requisicaoId: requisicao.id,
-      catalogItemId: item.catalogItemId,
-      nome: item.nome,
-      unidadeMedida: item.unidadeMedida,
-      qtdPedida: item.qtdPedida.toFixed(3),
-    })),
-  );
+  // Cabeçalho e itens juntos: se os itens falharem, a requisição não fica
+  // gravada vazia.
+  const organizationId = user.organizationId;
+  let requisicao: { id: number };
+  try {
+    requisicao = await db.transaction(async (tx) => {
+      const [nova] = await tx
+        .insert(requisicoes)
+        .values({
+          organizationId,
+          tipo,
+          unitId,
+          requesterId: user.id,
+          urgente,
+          observacao,
+          relatedRequisicaoId,
+          // lançou = o ERP já vê como aberta
+          erpStatus: "pendente",
+        })
+        .returning({ id: requisicoes.id });
+      await gravarItens(tx, nova.id, organizationId, itens);
+      return nova;
+    });
+  } catch (erro) {
+    console.error("Criar requisição falhou:", erro);
+    return { error: "Não foi possível salvar a requisição. Atualize a página e tente de novo." };
+  }
 
   await addHistoryEntry(
     user.id,
@@ -231,21 +269,22 @@ export async function updateRequisicao(
     return { error: "Selecione ao menos um item" };
   }
 
-  await db
-    .update(requisicoes)
-    .set({ urgente, observacao, editedAt: new Date(), erpStatus: "pendente" })
-    .where(eq(requisicoes.id, id));
-
-  await db.delete(requisicaoItens).where(eq(requisicaoItens.requisicaoId, id));
-  await db.insert(requisicaoItens).values(
-    itens.map((item) => ({
-      requisicaoId: id,
-      catalogItemId: item.catalogItemId,
-      nome: item.nome,
-      unidadeMedida: item.unidadeMedida,
-      qtdPedida: item.qtdPedida.toFixed(3),
-    })),
-  );
+  // Apaga e regrava os itens numa transação só: antes, se o insert
+  // falhasse, a requisição perdia todos os itens.
+  const organizationId = user.organizationId;
+  try {
+    await db.transaction(async (tx) => {
+      await tx
+        .update(requisicoes)
+        .set({ urgente, observacao, editedAt: new Date(), erpStatus: "pendente" })
+        .where(eq(requisicoes.id, id));
+      await tx.delete(requisicaoItens).where(eq(requisicaoItens.requisicaoId, id));
+      await gravarItens(tx, id, organizationId, itens);
+    });
+  } catch (erro) {
+    console.error("Editar requisição falhou:", erro);
+    return { error: "Não foi possível salvar a requisição. Atualize a página e tente de novo." };
+  }
 
   await definirDestinos(id);
   sincronizarComErp(id, user.organizationId);
