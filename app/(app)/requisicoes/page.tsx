@@ -17,7 +17,7 @@ import { RequisicoesBoard } from "./RequisicoesBoard";
 export default async function RequisicoesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string }>;
+  searchParams: Promise<{ tipo?: string; page?: string }>;
 }) {
   const user = await getCurrentUser();
   const effectiveUnitId = await resolveEffectiveUnitId(user);
@@ -26,7 +26,8 @@ export default async function RequisicoesPage({
     redirect("/hoje");
   }
 
-  const { tipo } = await searchParams;
+  const { tipo, page: pageParam } = await searchParams;
+  const page = Math.max(0, Number(pageParam ?? "0") || 0);
   const criarTiposPermitidos = tiposPermitidos(user);
 
   const tabs =
@@ -43,11 +44,12 @@ export default async function RequisicoesPage({
 
   // Gestor e gerente veem o catálogo inteiro; os demais, o do setor da função.
   const veTudo = isGestorProfile(user.profile) || user.profile === "gerente";
-  const [records, categorias, catalogo, units] = await Promise.all([
+  const [pagina, categorias, catalogo, units] = await Promise.all([
     getRequisicoesByScope(
       resolveRequisicaoScope({ ...user, unitId: effectiveUnitId }, activeTipo) ?? scope,
       user.organizationId!,
       activeTipo,
+      page,
     ),
     canCreate ? getCatalogCategories(user.organizationId!) : Promise.resolve([]),
     canCreate
@@ -75,10 +77,14 @@ export default async function RequisicoesPage({
   }
 
   // a parte que vai por Compras: a fase dela no ERP (aguardando, em cotação, pedido feito, recebida)
+  const records = pagina.records;
   const comCompras = records.filter((r) => r.tipo === "externa" && r.itens.some((i) => i.destino === "compras")).map((r) => r.id);
   const situacaoCompras = await situacaoComprasNoErp(comCompras.slice(0, 200), user.organizationId!);
 
+  const pageHref = (p: number) => `/requisicoes?${new URLSearchParams({ ...(tipo ? { tipo } : {}), ...(p > 0 ? { page: String(p) } : {}) })}`;
+
   return (
+    <div>
     <RequisicoesBoard
       records={records}
       tipo={activeTipo}
@@ -100,5 +106,10 @@ export default async function RequisicoesPage({
       canReceber={user.profile === "gerente" || isGestorProfile(user.profile)}
       situacaoCompras={situacaoCompras}
     />
+    <div style={{ display: "flex", justifyContent: "center", gap: 16, padding: "16px 0 32px" }}>
+      {page > 0 && <a href={pageHref(page - 1)} style={{ color: "var(--color-primary, #1B9AAA)" }}>← Anteriores</a>}
+      {pagina.hasMore && <a href={pageHref(page + 1)} style={{ color: "var(--color-primary, #1B9AAA)" }}>Próximas →</a>}
+    </div>
+    </div>
   );
 }

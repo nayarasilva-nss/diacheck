@@ -103,6 +103,8 @@ export async function getRequisicoesByScope(
   scope: RequisicaoScope,
   organizationId: number,
   tipo?: string | null,
+  page = 0,
+  pageSize = 100,
 ) {
   const conditions = [
     eq(requisicoes.organizationId, organizationId),
@@ -114,11 +116,20 @@ export async function getRequisicoesByScope(
     tipo === "interna" || tipo === "externa" ? eq(requisicoes.tipo, tipo) : undefined,
   ].filter((c) => c !== undefined);
 
-  const records = await baseQuery()
+  // Paginação: busca pageSize+1 para saber se há próxima página sem COUNT extra.
+  const paged = await baseQuery()
     .where(and(...conditions))
-    .orderBy(desc(requisicoes.createdAt));
+    .orderBy(desc(requisicoes.createdAt))
+    .limit(pageSize + 1)
+    .offset(page * pageSize);
+  const hasMore = paged.length > pageSize;
+  const records = hasMore ? paged.slice(0, pageSize) : paged;
 
-  if (records.length === 0) return [];
+  if (records.length === 0)
+    return {
+      records: records.map((r) => ({ ...r, itens: [], podeEditar: canEditToday(r), related: null })),
+      hasMore,
+    };
 
   const ids = records.map((r) => r.id);
   const allItens = await db
@@ -137,12 +148,15 @@ export async function getRequisicoesByScope(
     .filter((id): id is number => id !== null);
   const relatedById = await fetchRelatedInfo(relatedIds);
 
-  return records.map((r) => ({
-    ...r,
-    itens: itensByRequisicao.get(r.id) ?? [],
-    podeEditar: canEditToday(r),
-    related: r.relatedRequisicaoId ? (relatedById.get(r.relatedRequisicaoId) ?? null) : null,
-  }));
+  return {
+    records: records.map((r) => ({
+      ...r,
+      itens: itensByRequisicao.get(r.id) ?? [],
+      podeEditar: canEditToday(r),
+      related: r.relatedRequisicaoId ? (relatedById.get(r.relatedRequisicaoId) ?? null) : null,
+    })),
+    hasMore,
+  };
 }
 
 /** Requisições recentes (mesma unidade e tipo, não canceladas) que podem
