@@ -2,6 +2,7 @@
 
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { clientKey, rateLimit } from "@/lib/auth/rate-limit";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
@@ -50,6 +51,11 @@ export async function signupOrganization(
   }
   if (password.length < 6) {
     return { error: "A senha precisa ter pelo menos 6 caracteres" };
+  }
+
+  // Anti-abuso de criação de contas: no máximo 5 signups por IP por hora.
+  if (!rateLimit(await clientKey("signup"), 5, 60 * 60 * 1000)) {
+    return { error: "Muitas tentativas. Tente novamente mais tarde." };
   }
 
   const existingUser = await db

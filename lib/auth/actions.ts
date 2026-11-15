@@ -6,6 +6,9 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { createSession, deleteSession } from "./session";
+import { clientKey, rateLimit } from "./rate-limit";
+import { clearCoveringUnit } from "./covering-unit";
+import { clearGestorFuncao } from "./gestor-funcao";
 
 export type LoginState = { error?: string } | undefined;
 
@@ -20,6 +23,11 @@ export async function login(
 
   if (!username || !password) {
     return { error: "Preencha usuário e senha" };
+  }
+
+  // Força bruta: no máximo 10 tentativas por IP a cada 5 minutos.
+  if (!rateLimit(await clientKey("login"), 10, 5 * 60 * 1000)) {
+    return { error: "Muitas tentativas. Tente novamente em alguns minutos." };
   }
 
   // O usuário é comparado sem diferenciar maiúsculas: o teclado do celular
@@ -48,5 +56,8 @@ export async function login(
 
 export async function logout() {
   await deleteSession();
+  // Cookies operacionais (cobertura de unidade, função do gestor) não devem
+  // sobreviver ao logout: a próxima sessão começa do zero.
+  await Promise.all([clearCoveringUnit(), clearGestorFuncao()]);
   redirect("/login");
 }

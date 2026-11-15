@@ -9,7 +9,7 @@ import {
   TEAM_MANAGEMENT_ACTIONS,
 } from "@/lib/shift-log-constants";
 import { ANOMALY_SETORES } from "@/lib/anomaly-constants";
-import { todayISO } from "@/lib/date-utils";
+import { checklistDayISO } from "@/lib/date-utils";
 import { PendenciasEditor } from "./PendenciasEditor";
 
 const STEPS = [
@@ -89,7 +89,9 @@ export function DiarioBordoForm() {
       <div ref={(el) => { stepRefs.current[0] = el; }} hidden={step !== 1}>
         <div className="form-group">
           <label htmlFor="dbDate">Data</label>
-          <input id="dbDate" name="date" type="date" defaultValue={todayISO()} required />
+          {/* Dia operacional (muda às 02h, como o checklist): quem fecha o turno
+              depois de meia-noite registra no dia do turno, não no calendário. */}
+          <input id="dbDate" name="date" type="date" defaultValue={checklistDayISO()} required />
         </div>
 
         <div className="form-group">
