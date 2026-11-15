@@ -9,6 +9,8 @@ import { canCreateSolicitacao } from "@/lib/auth/solicitacoes";
 import { db } from "@/lib/db";
 import { solicitacoes, solicitacaoItens } from "@/lib/db/schema";
 import { cancelarSolicitacaoNoErp, enviarChegadaAoErp, enviarSolicitacaoAoErp } from "@/lib/erp/solicitacoes";
+import { ligacaoDaEmpresa } from "@/lib/erp/integracao";
+import { after } from "next/server";
 
 export type ActionState = { error?: string } | undefined;
 
@@ -117,8 +119,8 @@ export async function cancelSolicitacao(formData: FormData) {
     .where(eq(solicitacaoItens.solicitacaoId, id));
   if (itens.some((i) => i.status !== "pendente")) return;
 
-  await db.update(solicitacoes).set({ status: "cancelada" }).where(eq(solicitacoes.id, id));
-  await cancelarSolicitacaoNoErp(id);
+  await db.update(solicitacoes).set({ status: "cancelada" }).where(and(eq(solicitacoes.id, id), eq(solicitacoes.organizationId, user.organizationId)));
+  after(async () => cancelarSolicitacaoNoErp(id, await ligacaoDaEmpresa(user.organizationId)));
   revalidateSolicitacaoViews();
 }
 
@@ -128,10 +130,13 @@ export async function deleteSolicitacao(formData: FormData) {
   if (!isGestorProfile(user.profile) || !user.organizationId) return;
   const id = Number(formData.get("id"));
   if (!id) return;
-  await cancelarSolicitacaoNoErp(id);
-  await db
+  const deleted = await db
     .delete(solicitacoes)
-    .where(and(eq(solicitacoes.id, id), eq(solicitacoes.organizationId, user.organizationId)));
+    .where(and(eq(solicitacoes.id, id), eq(solicitacoes.organizationId, user.organizationId)))
+    .returning({ id: solicitacoes.id });
+  // Só avisa o ERP se a exclusão autorizada aconteceu de fato.
+  if (deleted.length === 0) return;
+  after(async () => cancelarSolicitacaoNoErp(id, await ligacaoDaEmpresa(user.organizationId)));
   revalidateSolicitacaoViews();
 }
 

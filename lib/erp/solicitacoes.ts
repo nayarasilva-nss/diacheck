@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { solicitacaoItens, solicitacoes, units, users } from "@/lib/db/schema";
-import { chamarErp, erpConfigurado } from "./integracao";
+import { chamarErp, erpConfigurado, ligacaoDaEmpresa, type LigacaoErp } from "./integracao";
 
 /**
  * As solicitações de item avulso vão para o ERP (POST /api/solicitacoes-compra, "aprovacao": true) e lá se aprovam
@@ -16,13 +16,16 @@ export async function enviarSolicitacaoAoErp(id: number): Promise<boolean> {
   if (!erpConfigurado()) return false;
   const [s] = await db
     .select({ id: solicitacoes.id, date: solicitacoes.date, urgente: solicitacoes.urgente, observacao: solicitacoes.observacao,
-      status: solicitacoes.status, cnpj: units.erpCnpj, solicitante: users.name })
+      status: solicitacoes.status, organizationId: solicitacoes.organizationId, cnpj: units.erpCnpj, solicitante: users.name })
     .from(solicitacoes)
     .innerJoin(units, eq(units.id, solicitacoes.unitId))
     .innerJoin(users, eq(users.id, solicitacoes.requesterId))
     .where(eq(solicitacoes.id, id))
     .limit(1);
   if (!s?.cnpj) return false;
+  // Liga no ERP da própria empresa; sem ligação configurada, não há para onde enviar.
+  const ligacao = await ligacaoDaEmpresa(s.organizationId);
+  if (!ligacao) return false;
   const itens = await db.select().from(solicitacaoItens).where(eq(solicitacaoItens.solicitacaoId, id)).orderBy(asc(solicitacaoItens.id));
   const corpo = s.status === "cancelada"
     ? { id_externo: idExterno(s.id), situacao: "cancelada" }
@@ -36,7 +39,7 @@ export async function enviarSolicitacaoAoErp(id: number): Promise<boolean> {
         })),
       };
   try {
-    const resposta = await chamarErp("/api/solicitacoes-compra", { method: "POST", body: JSON.stringify(corpo) });
+    const resposta = await chamarErp("/api/solicitacoes-compra", { method: "POST", body: JSON.stringify(corpo) }, ligacao);
     if (!resposta.ok) return false;
     await db.update(solicitacoes).set({ erpEnviadaEm: new Date() }).where(eq(solicitacoes.id, s.id));
     return true;
@@ -46,10 +49,10 @@ export async function enviarSolicitacaoAoErp(id: number): Promise<boolean> {
 }
 
 /** Excluída aqui: cancela no ERP (o que já virou pedido fica lá com o comprador). */
-export async function cancelarSolicitacaoNoErp(id: number): Promise<void> {
-  if (!erpConfigurado()) return;
+export async function cancelarSolicitacaoNoErp(id: number, ligacao?: LigacaoErp | null): Promise<void> {
+  if (!erpConfigurado() && !ligacao) return;
   try {
-    await chamarErp("/api/solicitacoes-compra", { method: "POST", body: JSON.stringify({ id_externo: idExterno(id), situacao: "cancelada" }) });
+    await chamarErp("/api/solicitacoes-compra", { method: "POST", body: JSON.stringify({ id_externo: idExterno(id), situacao: "cancelada" }) }, ligacao);
   } catch {
     // fora do ar: o comprador cancela lá
   }
@@ -58,11 +61,14 @@ export async function cancelarSolicitacaoNoErp(id: number): Promise<void> {
 /** O ok (ou o desfazer) da chegada de um item. */
 export async function enviarChegadaAoErp(solicitacaoId: number, itemId: number, chegou: boolean): Promise<boolean> {
   if (!erpConfigurado()) return false;
+  const [s] = await db.select({ organizationId: solicitacoes.organizationId }).from(solicitacoes).where(eq(solicitacoes.id, solicitacaoId)).limit(1);
+  const ligacao = await ligacaoDaEmpresa(s?.organizationId);
+  if (!ligacao) return false;
   try {
     const resposta = await chamarErp("/api/solicitacoes-compra", {
       method: "POST",
       body: JSON.stringify({ id_externo: idExterno(solicitacaoId), situacao: "chegada", item_id_externo: String(itemId), chegou }),
-    });
+    }, ligacao);
     return resposta.ok;
   } catch {
     return false;
@@ -98,6 +104,8 @@ type ItemErp = { id_externo: string | null; aprovacao: string | null; motivo: st
  */
 export async function sincronizarSolicitacoesDoErp(organizationId: number): Promise<void> {
   if (!erpConfigurado()) return;
+  const ligacao = await ligacaoDaEmpresa(organizationId);
+  if (!ligacao) return;
   const abertas = await db
     .select({ id: solicitacoes.id })
     .from(solicitacoes)
@@ -107,7 +115,7 @@ export async function sincronizarSolicitacoesDoErp(organizationId: number): Prom
   let dados: { solicitacoes: { id_externo: string; itens: ItemErp[] }[] };
   try {
     const resposta = await chamarErp(`/api/solicitacoes-compra?ids=${encodeURIComponent(abertas.map((a) => idExterno(a.id)).join(","))}`,
-      { signal: AbortSignal.timeout(4_000) });
+      { signal: AbortSignal.timeout(4_000) }, ligacao);
     if (!resposta.ok) return;
     dados = await resposta.json();
   } catch {

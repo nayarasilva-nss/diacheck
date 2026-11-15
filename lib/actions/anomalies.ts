@@ -11,6 +11,7 @@ import { ANOMALY_SETORES, ANOMALY_TYPES } from "@/lib/data/anomalies";
 import { addHistoryEntry } from "@/lib/data/history";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { enviarAcompanhamentoPendente, enviarOcorrenciaAoErp, excluirOcorrenciaNoErp } from "@/lib/erp/ocorrencias";
+import { ligacaoDaEmpresa } from "@/lib/erp/integracao";
 
 export type AnomalyFormState = { error?: string } | undefined;
 
@@ -56,19 +57,24 @@ export type RecordAnomalyInput = {
  * creating a duplicate if the same completion is resaved.
  */
 export async function recordAnomaly(input: RecordAnomalyInput) {
+  // O escopo vem SEMPRE do usuário logado (nunca do cliente): a unidade precisa
+  // pertencer à empresa do usuário e o relator é o usuário da sessão.
+  const user = await getCurrentUser();
+  if (!user.organizationId || input.userId !== user.id) return;
+
   const [unit] = await db
     .select({ organizationId: units.organizationId })
     .from(units)
     .where(eq(units.id, input.unitId))
     .limit(1);
-  if (!unit) return;
+  if (!unit || unit.organizationId !== user.organizationId) return;
 
   const inserted = await db
     .insert(anomalies)
     .values({
       organizationId: unit.organizationId,
       unitId: input.unitId,
-      userId: input.userId,
+      userId: user.id,
       date: input.date,
       relator: input.relator,
       tipos: input.tipos,
@@ -191,7 +197,7 @@ export async function deleteAnomaly(formData: FormData) {
   await db
     .delete(anomalies)
     .where(and(eq(anomalies.id, id), eq(anomalies.organizationId, gestor.organizationId)));
-  after(() => excluirOcorrenciaNoErp(id));
+  after(async () => excluirOcorrenciaNoErp(id, await ligacaoDaEmpresa(gestor.organizationId)));
   revalidatePath("/anomalias");
 }
 

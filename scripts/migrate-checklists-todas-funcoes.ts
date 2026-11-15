@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../lib/db";
 import { checklistTypeItems, checklistTypes, jobFunctions, organizations } from "../lib/db/schema";
 
@@ -398,16 +398,23 @@ async function main() {
     return;
   }
 
-  const existingOld = await db
+  // Restringe a exclusão à organização piloto (Kenkyo): apagar por nome
+  // global derruba modelos homônimos de outras empresas via cascade.
+  const existingOldScoped = await db
     .select({ id: checklistTypes.id, name: checklistTypes.name })
     .from(checklistTypes)
-    .where(inArray(checklistTypes.name, OLD_CHECKLIST_NAMES_TO_REMOVE));
-
-  if (existingOld.length > 0) {
-    await db.delete(checklistTypes).where(
-      inArray(checklistTypes.id, existingOld.map((e) => e.id)),
+    .where(
+      and(
+        inArray(checklistTypes.name, OLD_CHECKLIST_NAMES_TO_REMOVE),
+        eq(checklistTypes.organizationId, kenkyo.id),
+      ),
     );
-    for (const e of existingOld) {
+
+  if (existingOldScoped.length > 0) {
+    await db.delete(checklistTypes).where(
+      inArray(checklistTypes.id, existingOldScoped.map((e) => e.id)),
+    );
+    for (const e of existingOldScoped) {
       console.log(`Removido: "${e.name}"`);
     }
   }

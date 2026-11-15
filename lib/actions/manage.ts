@@ -380,10 +380,15 @@ export async function updateChecklistType(
     return { error: "Preencha o nome, o tipo e as tarefas" };
   }
 
-  await db
+  const updated = await db
     .update(checklistTypes)
     .set({ name, description, deadlineTime: parseDeadline(formData), type, jobFunctionId, assignedUserId })
-    .where(and(eq(checklistTypes.id, id), eq(checklistTypes.organizationId, gestor.organizationId)));
+    .where(and(eq(checklistTypes.id, id), eq(checklistTypes.organizationId, gestor.organizationId)))
+    .returning({ id: checklistTypes.id });
+
+  // Sem a linha autorizada atualizada, o checklist não é desta empresa:
+  // aborta antes de mexer em pré-requisitos/itens (evita edição cruzada).
+  if (updated.length === 0) return;
 
   await db
     .delete(checklistTypePrerequisites)

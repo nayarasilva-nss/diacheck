@@ -10,6 +10,7 @@ import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
 import { addHistoryEntry } from "@/lib/data/history";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { enviarRestoAoErp, excluirRestoNoErp } from "@/lib/erp/ocorrencias";
+import { ligacaoDaEmpresa } from "@/lib/erp/integracao";
 
 export type RestoIngestaFormState = { error?: string } | undefined;
 
@@ -86,6 +87,6 @@ export async function deleteRestoIngestaRecord(formData: FormData) {
   await db
     .delete(restoIngestaRecords)
     .where(and(eq(restoIngestaRecords.id, id), eq(restoIngestaRecords.organizationId, gestor.organizationId)));
-  after(() => excluirRestoNoErp(id));
+  after(async () => excluirRestoNoErp(id, await ligacaoDaEmpresa(gestor.organizationId)));
   revalidatePath("/perdas");
 }

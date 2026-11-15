@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "drizzle-kit migrate && tsx scripts/seed.ts && tsx scripts/seed-gerente-routine.ts && tsx scripts/seed-chefe-function.ts && tsx scripts/migrate-templates-to-checklists.ts && tsx scripts/seed-souschef-routine.ts && tsx scripts/dedupe-checklist-types.ts && tsx scripts/migrate-checklists-todas-funcoes.ts && tsx scripts/add-diario-bordo-item-to-fechamento.ts && tsx scripts/add-requisicao-insumos-item.ts && tsx scripts/add-contagem-semanal.ts && tsx scripts/seed-catalog-produtos.ts && tsx scripts/seed-audit-preset.ts && next build",
+    "vercel-build": "drizzle-kit migrate && next build",
+    "db:bootstrap": "tsx scripts/seed.ts && tsx scripts/seed-gerente-routine.ts && tsx scripts/seed-chefe-function.ts && tsx scripts/migrate-templates-to-checklists.ts && tsx scripts/seed-souschef-routine.ts && tsx scripts/dedupe-checklist-types.ts && tsx scripts/migrate-checklists-todas-funcoes.ts && tsx scripts/add-diario-bordo-item-to-fechamento.ts && tsx scripts/add-requisicao-insumos-item.ts && tsx scripts/add-contagem-semanal.ts && tsx scripts/seed-catalog-produtos.ts && tsx scripts/seed-audit-preset.ts",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",

@@ -331,11 +331,14 @@ export async function deleteRequisicao(
   const id = Number(formData.get("id"));
   if (!id || !user.organizationId) return { error: "Requisição inválida" };
 
-  await db
+  const deleted = await db
     .delete(requisicoes)
-    .where(and(eq(requisicoes.id, id), eq(requisicoes.organizationId, user.organizationId)));
+    .where(and(eq(requisicoes.id, id), eq(requisicoes.organizationId, user.organizationId)))
+    .returning({ id: requisicoes.id });
 
-  // excluída aqui: a aberta no ERP é cancelada (a já conferida fica, com a baixa)
+  // excluída aqui: a aberta no ERP é cancelada (a já conferida fica, com a baixa) —
+  // só depois de confirmar que a exclusão autorizada removeu a linha
+  if (deleted.length === 0) return { error: "Requisição não encontrada" };
   after(() => cancelarExcluidaNoErp(id).catch((erro) => console.error("Cancelar no ERP falhou:", erro)));
   revalidateRequisicaoViews();
 }

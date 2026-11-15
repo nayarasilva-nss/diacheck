@@ -310,7 +310,7 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
   if (!ligacao) return gravar(req.id, { status: "pendente", mensagem: "A ligação com o ERP ainda não está configurada.", numero: null });
   const externa = req.tipo === "externa";
   if (req.status === "cancelada") {
-    return gravar(req.id, combinar(await cancelarNoErp(req.id), externa ? await cancelarSolicitacaoNoErp(req.id) : ENVIADA));
+    return gravar(req.id, combinar(await cancelarNoErp(req.id, ligacao), externa ? await cancelarSolicitacaoNoErp(req.id, ligacao) : ENVIADA));
   }
   if (!req.erpCnpj) {
     return gravar(req.id, { status: "aguardando", mensagem: `A unidade ${req.unitName} ainda não está ligada a uma empresa do ERP.`, numero: null });
@@ -340,13 +340,13 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
   // (baixa na conferência); a de Compras, solicitação de compra.
   const doEmporio = externa ? itens.filter((i) => i.destino !== "compras") : itens;
   const deCompras = externa ? itens.filter((i) => i.destino === "compras") : [];
-  const parteEmporio = doEmporio.length > 0 ? await enviarParteEstoque(r, doEmporio) : await cancelarNoErp(req.id, ligacao);
+  const parteEmporio = doEmporio.length > 0 ? await enviarParteEstoque(r, doEmporio, ligacao) : await cancelarNoErp(req.id, ligacao);
   const parteCompras = !externa ? ENVIADA : deCompras.length > 0 ? await enviarParteCompras(r, deCompras, ligacao) : await cancelarSolicitacaoNoErp(req.id, ligacao);
   return gravar(req.id, combinar(parteEmporio, parteCompras));
 }
 
 /** O que sai do estoque (interna, ou a parte do Empório da externa): requisição no ERP. */
-async function enviarParteEstoque(req: ReqEnvio, itens: ItemEnvio[]): Promise<ResultadoEnvio> {
+async function enviarParteEstoque(req: ReqEnvio, itens: ItemEnvio[], ligacao?: LigacaoErp | null): Promise<ResultadoEnvio> {
   const conferida = req.status === "conferida";
   // Item avulso (fora do catálogo) não tem como baixar estoque: vai como aviso.
   const avulsos = itens.filter((i) => i.catalogItemId === null).map((i) => i.nome);
@@ -412,7 +412,7 @@ async function enviarParteEstoque(req: ReqEnvio, itens: ItemEnvio[]): Promise<Re
 
   let resposta: Response;
   try {
-    resposta = await chamarErp("/api/requisicoes", { method: "POST", body: JSON.stringify(corpo) });
+    resposta = await chamarErp("/api/requisicoes", { method: "POST", body: JSON.stringify(corpo) }, ligacao);
   } catch {
     return { status: "pendente", mensagem: "O ERP não respondeu. Vai de novo na próxima tentativa.", numero: null };
   }
@@ -433,7 +433,7 @@ async function enviarParteCompras(req: ReqEnvio, itens: ItemEnvio[], ligacao?: L
       ? { codigo: i.erpItemCodigo, descricao: i.nome, quantidade: arredondar(Number(i.qtdPedida) * fator) }
       : { descricao: i.nome, quantidade: Number(i.qtdPedida), unidade: i.unidadePedida };
   }).filter((l) => l.quantidade > 0);
-  if (linhas.length === 0) return cancelarSolicitacaoNoErp(req.id);
+  if (linhas.length === 0) return cancelarSolicitacaoNoErp(req.id, ligacao);
   const corpo = {
     id_externo: `checklist-${req.id}`,
     situacao: "aberta",
