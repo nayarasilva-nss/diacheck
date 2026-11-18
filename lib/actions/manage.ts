@@ -207,6 +207,31 @@ export async function createUnit(
   revalidateManageViews();
 }
 
+export async function updateUnit(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
+
+  const id = Number(formData.get("id"));
+  const name = String(formData.get("name") ?? "").trim();
+  if (!id || !name) return { error: "Preencha o nome da unidade" };
+
+  const existing = await db
+    .select({ id: units.id })
+    .from(units)
+    .where(and(eq(units.name, name), eq(units.organizationId, gestor.organizationId), ne(units.id, id)))
+    .limit(1);
+  if (existing.length > 0) return { error: "Já existe uma unidade com esse nome" };
+
+  await db
+    .update(units)
+    .set({ name })
+    .where(and(eq(units.id, id), eq(units.organizationId, gestor.organizationId)));
+  revalidateManageViews();
+}
+
 export async function deleteUnit(formData: FormData) {
   const gestor = await requireGestor();
   const id = Number(formData.get("id"));

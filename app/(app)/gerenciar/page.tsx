@@ -6,12 +6,7 @@ import {
   getUnits,
   getJobFunctions,
 } from "@/lib/data/manage";
-import { deleteUnit } from "@/lib/actions/manage";
 import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
-import { AddUnitForm } from "./AddUnitForm";
-import { AddJobFunctionForm } from "./AddJobFunctionForm";
-import { JobFunctionRow } from "./JobFunctionRow";
-import { DeleteButton } from "./DeleteButton";
 import { AddFormDefinitionForm } from "./AddFormDefinitionForm";
 import { FormDefinitionRow } from "./FormDefinitionRow";
 import { getFormDefinitions } from "@/lib/data/form-definitions";
@@ -25,6 +20,7 @@ import { ImportarModelos } from "./ImportarModelos";
 import { ModelosBoard } from "./ModelosBoard";
 import { UsuariosBoard } from "./UsuariosBoard";
 import { CatalogoBoard } from "./CatalogoBoard";
+import { FuncoesUnidadesBoard } from "./FuncoesUnidadesBoard";
 
 // Abas agrupadas por assunto. As chaves (?tab=...) continuam as mesmas, então links antigos seguem valendo.
 type Grupo = { key: string; label: string; ajuda: string; tabs: { key: string; label: string }[] };
@@ -160,46 +156,27 @@ export default async function GerenciarPage({
       )}
 
       {tab === "unidades" && (
-        <div className="board-layout">
-          <div className="today-card">
-            <div className="today-card-title" style={{ marginBottom: 14 }}>
-              Unidades · {units.length}
-            </div>
-            {units.map((unit) => (
-              <div className="list-item" key={unit.id}>
-                <div className="info">
-                  <h4>{unit.name}</h4>
-                </div>
-                <div className="list-item-actions">
-                  <DeleteButton
-                    action={deleteUnit}
-                    id={unit.id}
-                    confirmText={`Deletar a unidade "${unit.name}"?`}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="detail-panel" style={{ minHeight: "auto" }}>
-            <AddUnitForm />
-          </div>
-        </div>
+        <FuncoesUnidadesBoard
+          tipo="unidade"
+          itens={units.map((u) => ({
+            id: u.id,
+            name: u.name,
+            pessoas: users.filter((x) => x.unitId === u.id).length,
+            noErp: Boolean(u.erpCnpj),
+          }))}
+        />
       )}
 
       {tab === "funcoes" && (
-        <div className="board-layout">
-          <div className="today-card">
-            <div className="today-card-title" style={{ marginBottom: 14 }}>
-              Funções · {jobFunctions.length}
-            </div>
-            {jobFunctions.map((jobFunction) => (
-              <JobFunctionRow key={jobFunction.id} jobFunction={jobFunction} />
-            ))}
-          </div>
-          <div className="detail-panel" style={{ minHeight: "auto" }}>
-            <AddJobFunctionForm />
-          </div>
-        </div>
+        <FuncoesUnidadesBoard
+          tipo="funcao"
+          itens={jobFunctions.map((f) => ({
+            id: f.id,
+            name: f.name,
+            pessoas: users.filter((x) => x.jobFunctionId === f.id).length,
+            modelos: checklistTypes.filter((c) => c.jobFunctionId === f.id).length,
+          }))}
+        />
       )}
 
       {tab === "catalogo" && <CatalogoBoard categorias={catalogCategories} produtos={catalogItems} />}

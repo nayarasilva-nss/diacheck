@@ -3,8 +3,8 @@
 import { useRef, useState, useTransition } from "react";
 import { createUnit } from "@/lib/actions/manage";
 
-export function AddUnitForm() {
-  const [open, setOpen] = useState(false);
+export function AddUnitForm({ startOpen = false, onDone }: { startOpen?: boolean; onDone?: () => void }) {
+  const [open, setOpen] = useState(startOpen);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -28,6 +28,7 @@ export function AddUnitForm() {
         setError(undefined);
         setOpen(false);
         formRef.current?.reset();
+        onDone?.();
       }
     });
   }
@@ -44,7 +45,7 @@ export function AddUnitForm() {
         <button
           type="button"
           className="btn-cancel"
-          onClick={() => setOpen(false)}
+          onClick={() => { setOpen(false); onDone?.(); }}
         >
           Cancelar
         </button>

@@ -6,26 +6,32 @@ import { DeleteButton } from "./DeleteButton";
 
 type JobFunction = { id: number; name: string };
 
-export function JobFunctionRow({ jobFunction }: { jobFunction: JobFunction }) {
+export function JobFunctionRow({ jobFunction, pessoas = 0, modelos = 0 }: { jobFunction: JobFunction; pessoas?: number; modelos?: number }) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
   if (!editing) {
     return (
-      <div className="list-item">
-        <div className="info">
-          <h4>{jobFunction.name}</h4>
+      <div className="modelo-card">
+        <div className="modelo-card-topo">
+          <div className="modelo-card-titulo static">
+            <span className="modelo-nome">{jobFunction.name}</span>
+          </div>
+          <div className="list-item-actions">
+            <button className="btn-small" type="button" onClick={() => setEditing(true)}>
+              Editar
+            </button>
+            <DeleteButton
+              action={deleteJobFunction}
+              id={jobFunction.id}
+              confirmText={`Deletar a função "${jobFunction.name}"?${pessoas > 0 ? ` ${pessoas} pessoa(s) ficam sem função.` : ""}${modelos > 0 ? ` ${modelos} modelo(s) de checklist deixam de ser específicos dela.` : ""}`}
+            />
+          </div>
         </div>
-        <div className="list-item-actions">
-          <button className="btn-small" type="button" onClick={() => setEditing(true)}>
-            Editar
-          </button>
-          <DeleteButton
-            action={deleteJobFunction}
-            id={jobFunction.id}
-            confirmText={`Deletar a função "${jobFunction.name}"?`}
-          />
+        <div className="modelo-badges sem-recuo">
+          <span className="modelo-badge">{pessoas} {pessoas === 1 ? "pessoa" : "pessoas"}</span>
+          <span className="modelo-badge">{modelos} {modelos === 1 ? "modelo" : "modelos"} de checklist</span>
         </div>
       </div>
     );

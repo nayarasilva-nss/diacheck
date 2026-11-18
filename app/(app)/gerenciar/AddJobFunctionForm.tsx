@@ -3,8 +3,8 @@
 import { useRef, useState, useTransition } from "react";
 import { createJobFunction } from "@/lib/actions/manage";
 
-export function AddJobFunctionForm() {
-  const [open, setOpen] = useState(false);
+export function AddJobFunctionForm({ startOpen = false, onDone }: { startOpen?: boolean; onDone?: () => void }) {
+  const [open, setOpen] = useState(startOpen);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -28,6 +28,7 @@ export function AddJobFunctionForm() {
         setError(undefined);
         setOpen(false);
         formRef.current?.reset();
+        onDone?.();
       }
     });
   }
@@ -48,7 +49,7 @@ export function AddJobFunctionForm() {
         <button
           type="button"
           className="btn-cancel"
-          onClick={() => setOpen(false)}
+          onClick={() => { setOpen(false); onDone?.(); }}
         >
           Cancelar
         </button>
