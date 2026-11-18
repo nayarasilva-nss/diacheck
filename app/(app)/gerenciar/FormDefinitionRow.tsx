@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateFormDefinition, deleteFormDefinition } from "@/lib/actions/form-definitions";
+import { updateFormDefinition, deleteFormDefinition, duplicateFormDefinition } from "@/lib/actions/form-definitions";
 import { DeleteButton } from "./DeleteButton";
 import { FormFieldsEditor, type EditableField } from "./FormFieldsEditor";
 import type { FormDefinition } from "@/lib/data/form-definitions";
@@ -16,28 +16,57 @@ export function FormDefinitionRow({
   jobFunctions: Option[];
 }) {
   const [editing, setEditing] = useState(false);
+  const [aberto, setAberto] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
   if (!editing) {
+    const TIPOS: Record<string, string> = { number: "número", text: "texto", date: "data", boolean: "sim/não", select: "lista" };
     return (
-      <div className="list-item">
-        <div className="info">
-          <h4>
-            {definition.name} {!definition.active && <span className="badge badge-neutral">Inativo</span>}
-          </h4>
-          <p>{definition.fields.length} campos • {definition.description || "sem descrição"}</p>
-        </div>
-        <div className="list-item-actions">
-          <button className="btn-small" type="button" onClick={() => setEditing(true)}>
-            Editar
+      <div className="modelo-card">
+        <div className="modelo-card-topo">
+          <button type="button" className="modelo-card-titulo" aria-expanded={aberto} onClick={() => setAberto((v) => !v)}>
+            <span className="modelo-seta" aria-hidden="true">{aberto ? "▾" : "▸"}</span>
+            <span className="modelo-nome">{definition.name}</span>
           </button>
-          <DeleteButton
-            action={deleteFormDefinition}
-            id={definition.id}
-            confirmText={`Excluir o formulário "${definition.name}"? Isso apaga os registros já feitos com ele.`}
-          />
+          <div className="list-item-actions">
+            <button className="btn-small" type="button" onClick={() => setEditing(true)}>
+              Editar
+            </button>
+            <form action={duplicateFormDefinition}>
+              <input type="hidden" name="id" value={definition.id} />
+              <button className="btn-small" type="submit" title="Cria uma cópia inativa para ajustar">
+                Duplicar
+              </button>
+            </form>
+            <DeleteButton
+              action={deleteFormDefinition}
+              id={definition.id}
+              confirmText={`Excluir o formulário "${definition.name}"? Isso apaga os registros já feitos com ele.`}
+            />
+          </div>
         </div>
+        <div className="modelo-badges">
+          <span className={`modelo-badge${definition.active ? " daily" : ""}`}>{definition.active ? "Ativo" : "Inativo"}</span>
+          <span className="modelo-badge">{definition.fields.length} campos</span>
+          {definition.allowGestor && <span className="modelo-badge">gestor</span>}
+          {definition.allowedJobFunctionNames.map((n) => (
+            <span className="modelo-badge" key={n}>{n}</span>
+          ))}
+        </div>
+        {aberto && (
+          <div className="modelo-detalhe">
+            {definition.description && <p className="items-count">{definition.description}</p>}
+            <ol className="modelo-tarefas">
+              {definition.fields.map((f) => (
+                <li key={f.key}>
+                  {f.label}
+                  <em> · {TIPOS[f.type] ?? f.type}{f.unit ? ` (${f.unit})` : ""}{f.required ? " · obrigatório" : ""}</em>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
       </div>
     );
   }

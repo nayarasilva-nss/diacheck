@@ -130,6 +130,26 @@ export async function updateFormDefinition(
   revalidateFormViews();
 }
 
+export async function duplicateFormDefinition(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!isGestorProfile(user.profile) || !user.organizationId) return;
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  const origem = await getFormDefinition(id, user.organizationId);
+  if (!origem) return;
+  // A cópia nasce inativa: dá para ajustar antes de aparecer para a equipe.
+  await db.insert(formDefinitions).values({
+    organizationId: user.organizationId,
+    name: `${origem.name} (cópia)`,
+    description: origem.description,
+    fields: origem.fields,
+    allowedJobFunctionNames: origem.allowedJobFunctionNames,
+    allowGestor: origem.allowGestor,
+    active: false,
+  });
+  revalidateFormViews();
+}
+
 export async function deleteFormDefinition(formData: FormData) {
   const user = await getCurrentUser();
   if (!isGestorProfile(user.profile) || !user.organizationId) return;

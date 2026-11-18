@@ -7,8 +7,6 @@ import {
   getJobFunctions,
 } from "@/lib/data/manage";
 import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
-import { AddFormDefinitionForm } from "./AddFormDefinitionForm";
-import { FormDefinitionRow } from "./FormDefinitionRow";
 import { getFormDefinitions } from "@/lib/data/form-definitions";
 import { getOrganizationById } from "@/lib/data/organizations";
 import { BrandForm } from "./BrandForm";
@@ -20,6 +18,7 @@ import { ImportarModelos } from "./ImportarModelos";
 import { ModelosBoard } from "./ModelosBoard";
 import { UsuariosBoard } from "./UsuariosBoard";
 import { CatalogoBoard } from "./CatalogoBoard";
+import { FormulariosBoard } from "./FormulariosBoard";
 import { FuncoesUnidadesBoard } from "./FuncoesUnidadesBoard";
 
 // Abas agrupadas por assunto. As chaves (?tab=...) continuam as mesmas, então links antigos seguem valendo.
@@ -136,24 +135,7 @@ export default async function GerenciarPage({
         <ModelosBoard modelos={checklistTypes} jobFunctions={jobFunctions} users={users} />
       )}
 
-      {tab === "formularios" && (
-        <div className="board-layout">
-          <div className="today-card">
-            <div className="today-card-title" style={{ marginBottom: 14 }}>
-              Formulários personalizados · {formDefinitions.length}
-            </div>
-            <p className="items-count" style={{ marginBottom: 14 }}>
-              Pra registros operacionais que não têm uma tela dedicada — aparecem em &quot;Formulários&quot; pra quem tiver permissão.
-            </p>
-            {formDefinitions.map((def) => (
-              <FormDefinitionRow key={def.id} definition={def} jobFunctions={jobFunctions} />
-            ))}
-          </div>
-          <div className="detail-panel" style={{ minHeight: "auto" }}>
-            <AddFormDefinitionForm jobFunctions={jobFunctions} />
-          </div>
-        </div>
-      )}
+      {tab === "formularios" && <FormulariosBoard definitions={formDefinitions} jobFunctions={jobFunctions} />}
 
       {tab === "unidades" && (
         <FuncoesUnidadesBoard

@@ -6,8 +6,8 @@ import { FormFieldsEditor } from "./FormFieldsEditor";
 
 type Option = { id: number; name: string };
 
-export function AddFormDefinitionForm({ jobFunctions }: { jobFunctions: Option[] }) {
-  const [open, setOpen] = useState(false);
+export function AddFormDefinitionForm({ jobFunctions, startOpen = false, onDone }: { jobFunctions: Option[]; startOpen?: boolean; onDone?: () => void }) {
+  const [open, setOpen] = useState(startOpen);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -31,6 +31,7 @@ export function AddFormDefinitionForm({ jobFunctions }: { jobFunctions: Option[]
         setError(undefined);
         setOpen(false);
         formRef.current?.reset();
+        onDone?.();
       }
     });
   }
@@ -65,7 +66,7 @@ export function AddFormDefinitionForm({ jobFunctions }: { jobFunctions: Option[]
 
       {error && <p className="login-error">{error}</p>}
       <div className="inline-form-buttons">
-        <button type="button" className="btn-cancel" onClick={() => setOpen(false)}>
+        <button type="button" className="btn-cancel" onClick={() => { setOpen(false); onDone?.(); }}>
           Cancelar
         </button>
         <button className="btn-save" type="submit" disabled={isPending}>
