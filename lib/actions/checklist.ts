@@ -20,7 +20,8 @@ import { checklistDayForInstant } from "@/lib/date-utils";
 import { contagensNoErp } from "@/lib/erp/contagens";
 import { ligacaoDaEmpresa } from "@/lib/erp/integracao";
 
-const STATUS_VALUES = ["conforme", "nao-conforme", "nao-se-aplica"] as const;
+// "pending" é desmarcar: o check volta a ficar em branco.
+const STATUS_VALUES = ["conforme", "nao-conforme", "nao-se-aplica", "pending"] as const;
 type Status = (typeof STATUS_VALUES)[number];
 
 function revalidateChecklistViews() {
@@ -79,6 +80,21 @@ export async function setChecklistItemStatus(
   const context = await getItemContext(itemId, checklistTypeId, user.organizationId);
   if (!context) return { error: "Item não encontrado" };
 
+  if (status === "pending") {
+    await db
+      .update(checklistCompletions)
+      .set({ status: "pending", justification: null, photoUrl: null })
+      .where(
+        and(
+          eq(checklistCompletions.itemId, itemId),
+          eq(checklistCompletions.userId, user.id),
+          eq(checklistCompletions.date, todayISO()),
+        ),
+      );
+    revalidateChecklistViews();
+    return;
+  }
+
   if (context.requiresPhoto && !photoUrl) {
     return { error: "Essa tarefa exige uma foto de evidência" };
   }
@@ -101,7 +117,7 @@ export async function setChecklistItemStatus(
       .limit(1);
     if (!shiftLog) {
       return {
-        error: "Você precisa preencher o diário de bordo de hoje antes de marcar esta tarefa como conforme.",
+        error: "Você precisa preencher o diário de bordo de hoje antes de marcar esta tarefa.",
       };
     }
   }
@@ -118,7 +134,7 @@ export async function setChecklistItemStatus(
     );
     if (!hasToday) {
       return {
-        error: "Você precisa preencher a requisição de insumos de hoje antes de marcar esta tarefa como conforme.",
+        error: "Você precisa preencher a requisição de insumos de hoje antes de marcar esta tarefa.",
       };
     }
   }

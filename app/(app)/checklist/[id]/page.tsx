@@ -108,19 +108,23 @@ export default async function ChecklistDetailPage({
             </div>
             <div className="detail-panel-fields" style={{ gap: 10 }}>
               <div className="quick-action-row">
-                Conformes
+                Feitas
                 <span className="badge badge-success">{conforme}</span>
               </div>
-              <div className="quick-action-row">
-                Não conformes
-                <span className="badge badge-danger">{naoConforme}</span>
-              </div>
-              <div className="quick-action-row">
-                Não se aplica
-                <span className="badge badge-neutral">{naoSeAplica}</span>
-              </div>
+              {naoConforme > 0 && (
+                <div className="quick-action-row">
+                  Não conformes
+                  <span className="badge badge-danger">{naoConforme}</span>
+                </div>
+              )}
+              {naoSeAplica > 0 && (
+                <div className="quick-action-row">
+                  Não se aplica
+                  <span className="badge badge-neutral">{naoSeAplica}</span>
+                </div>
+              )}
               <div className="quick-action-row" style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
-                Faltam responder
+                Faltam
                 <span className="badge badge-info">{faltam}</span>
               </div>
             </div>

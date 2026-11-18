@@ -3168,3 +3168,12 @@ a.plano-item { display: block; }
   .modelos-toolbar select, .modelos-toolbar .modelos-novo { flex: 1 1 100%; margin-left: 0; }
   .modelo-badges, .modelo-detalhe { margin-left: 0; }
 }
+
+/* Check único, como no Todoist: toque no círculo marca e desmarca. */
+.item-check { background: none; border: 0; padding: 8px; margin: -8px -4px -8px -8px; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.item-check:disabled { cursor: not-allowed; opacity: .6; }
+.item-check .item-marker { width: 30px; height: 30px; transition: background .15s, border-color .15s; }
+.item-check:hover:not(:disabled) .item-marker.pending { border-color: var(--success); }
+.item-check:focus-visible { outline: 2px solid var(--kenkyo-red); outline-offset: 2px; border-radius: 50%; }
+.item-text { align-self: center; }
+.item-text.feito { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--text-faint); }

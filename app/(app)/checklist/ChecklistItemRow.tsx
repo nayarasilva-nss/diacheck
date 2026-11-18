@@ -5,9 +5,6 @@ import { useState, useTransition } from "react";
 import { upload } from "@vercel/blob/client";
 import { setChecklistItemStatus } from "@/lib/actions/checklist";
 import type { CompletionStatus } from "@/lib/data/checklists";
-import { guessSetorFromText } from "@/lib/anomaly-constants";
-
-type Status = "conforme" | "nao-conforme" | "nao-se-aplica";
 
 type Item = {
   id: number;
@@ -65,227 +62,160 @@ async function compressPhoto(file: File): Promise<File> {
 const STATUS_MARKER: Record<CompletionStatus, string> = {
   conforme: "✓",
   "nao-conforme": "!",
-  "nao-se-aplica": "",
+  "nao-se-aplica": "–",
   pending: "",
 };
 
 export function ChecklistItemRow({
   item,
   checklistTypeId,
-  checklistTypeName,
   organizationId,
   locked,
 }: {
   item: Item;
   checklistTypeId: number;
-  checklistTypeName: string;
+  checklistTypeName?: string;
   // Isola o arquivo no Blob por empresa — ver app/api/upload/route.ts,
   // que valida esse prefixo contra a empresa do usuário autenticado.
   organizationId: number;
-  // Pré-requisitos do checklist ainda não cumpridos — os botões ficam
-  // desabilitados; o servidor recusaria de qualquer forma (ver
-  // setChecklistItemStatus), isso só evita o usuário tentar à toa.
+  // Pré-requisitos do checklist ainda não cumpridos — o check fica
+  // desabilitado; o servidor recusaria de qualquer forma.
   locked?: boolean;
 }) {
-  const [pendingStatus, setPendingStatus] = useState<Status | null>(null);
-  const [justification, setJustification] = useState(item.justification ?? "");
+  const [askPhoto, setAskPhoto] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  // Resposta mostrada na hora, antes do servidor confirmar; volta ao valor
+  // real se der erro.
+  const [shown, setShown] = useState<CompletionStatus | null>(null);
+  const status = shown ?? item.status;
+  const done = status !== "pending";
 
-  function openForm(status: Status) {
-    setJustification(status === "nao-conforme" ? (item.justification ?? "") : "");
-    setPhotoFile(null);
-    setError(null);
-    setPendingStatus(status);
-  }
-
-  function handleStatusClick(status: Status) {
-    if (item.requiresPhoto || status === "nao-conforme") {
-      openForm(status);
-      return;
-    }
-    submit(status, "", null);
-  }
-
-  function submit(status: Status, justificationValue: string, photoUrl: string | null) {
+  function send(next: "conforme" | "pending", photoUrl: string | null) {
     const fd = new FormData();
     fd.set("itemId", String(item.id));
     fd.set("checklistTypeId", String(checklistTypeId));
-    fd.set("status", status);
-    if (justificationValue) fd.set("justification", justificationValue);
+    fd.set("status", next);
     if (photoUrl) fd.set("photoUrl", photoUrl);
+    setShown(next);
     startTransition(async () => {
       const result = await setChecklistItemStatus(undefined, fd);
       if (result?.error) {
         setError(result.error);
+        setShown(null);
       } else {
-        setPendingStatus(null);
         setError(null);
+        setAskPhoto(false);
+        setShown(null);
       }
     });
   }
 
-  async function handleSubmitForm(event: React.FormEvent) {
-    event.preventDefault();
-    if (!pendingStatus) return;
-
-    if (pendingStatus === "nao-conforme" && !justification.trim()) {
-      setError("Justificativa é obrigatória");
+  function toggle() {
+    setError(null);
+    if (done && status !== "nao-conforme" && status !== "nao-se-aplica") {
+      send("pending", null);
       return;
     }
-
-    let photoUrl: string | null = item.photoUrl;
     if (item.requiresPhoto) {
-      if (!photoFile) {
-        setError("Essa tarefa exige uma foto de evidência");
-        return;
-      }
-      setUploading(true);
-      setError(null);
-      try {
-        const compressed = await compressPhoto(photoFile);
-        if (compressed.size > 10 * 1024 * 1024) {
-          setUploading(false);
-          setError(
-            "Essa foto tem mais de 10MB mesmo depois de compactada — tente uma foto com menos resolução.",
-          );
-          return;
-        }
-        const blob = await upload(
-          `org-${organizationId}/evidencias/${checklistTypeId}-${item.id}-${Date.now()}-${compressed.name}`,
-          compressed,
-          { access: "public", handleUploadUrl: "/api/upload" },
-        );
-        photoUrl = blob.url;
-      } catch (err) {
-        setUploading(false);
-        // A causa real (sessão expirada, tipo de arquivo rejeitado, rede
-        // caindo no meio do envio) vem em err.message — mostrar em vez de
-        // esconder atrás de uma mensagem genérica, senão fica impossível
-        // saber por que falhou quando alguém reporta "falha ao enviar foto".
-        console.error("Falha ao enviar foto de evidência:", err);
-        const detail = err instanceof Error ? err.message : "";
-        const amigavel = detail.includes("Não autenticado")
-          ? "Sua sessão expirou — atualize a página e tente de novo."
-          : detail.includes("exceeds")
-            ? "A foto é grande demais pra esse limite."
-            : detail || "Verifique sua conexão e tente de novo.";
-        setError(`Falha ao enviar a foto: ${amigavel}`);
-        return;
-      }
-      setUploading(false);
+      setPhotoFile(null);
+      setAskPhoto((v) => !v);
+      return;
     }
+    send("conforme", null);
+  }
 
-    submit(pendingStatus, justification, photoUrl);
+  async function handleSubmitPhoto(event: React.FormEvent) {
+    event.preventDefault();
+    if (!photoFile) {
+      setError("Essa tarefa exige uma foto de evidência");
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const compressed = await compressPhoto(photoFile);
+      if (compressed.size > 10 * 1024 * 1024) {
+        setUploading(false);
+        setError("Essa foto tem mais de 10MB mesmo depois de compactada — tente uma foto com menos resolução.");
+        return;
+      }
+      const blob = await upload(
+        `org-${organizationId}/evidencias/${checklistTypeId}-${item.id}-${Date.now()}-${compressed.name}`,
+        compressed,
+        { access: "public", handleUploadUrl: "/api/upload" },
+      );
+      setUploading(false);
+      send("conforme", blob.url);
+    } catch (err) {
+      setUploading(false);
+      console.error("Falha ao enviar foto de evidência:", err);
+      const detail = err instanceof Error ? err.message : "";
+      const amigavel = detail.includes("Não autenticado")
+        ? "Sua sessão expirou — atualize a página e tente de novo."
+        : detail.includes("exceeds")
+          ? "A foto é grande demais pra esse limite."
+          : detail || "Verifique sua conexão e tente de novo.";
+      setError(`Falha ao enviar a foto: ${amigavel}`);
+    }
   }
 
   const busy = isPending || uploading || locked;
 
   return (
-    <div className={`checklist-item ${STATUS_CLASS[item.status]}`}>
+    <div className={`checklist-item ${STATUS_CLASS[status]}`}>
       <div className="item-marker-row">
-        <span className={`item-marker ${item.status}`}>{STATUS_MARKER[item.status]}</span>
-        <span className="item-text">{item.label}</span>
-        {item.requiresPhoto && (
-          <span className="requires-photo-badge">Foto obrigatória</span>
-        )}
-        {item.requiresShiftLog && (
-          <span className="requires-photo-badge">Exige diário de bordo enviado</span>
-        )}
-        {item.requiresRequisicao && (
-          <span className="requires-photo-badge">Exige requisição de insumos enviada</span>
-        )}
+        <button
+          type="button"
+          className="item-check"
+          role="checkbox"
+          aria-checked={done}
+          aria-label={item.label}
+          onClick={toggle}
+          disabled={busy}
+        >
+          <span className={`item-marker ${status}`}>{STATUS_MARKER[status]}</span>
+        </button>
+        <span className={`item-text${done ? " feito" : ""}`}>{item.label}</span>
+        {item.requiresPhoto && <span className="requires-photo-badge">Foto obrigatória</span>}
+        {item.requiresShiftLog && <span className="requires-photo-badge">Exige diário de bordo enviado</span>}
+        {item.requiresRequisicao && <span className="requires-photo-badge">Exige requisição de insumos enviada</span>}
         {item.requiresContagem && (
           <Link href="/contagem" className="requires-photo-badge">Exige a contagem do estoque da semana no ERP</Link>
         )}
       </div>
 
-      <div className="item-button-row">
-        <button
-          type="button"
-          className={`btn-status btn-status-conforme ${item.status === "conforme" ? "active" : ""}`}
-          onClick={() => handleStatusClick("conforme")}
-          disabled={busy}
-        >
-          Conforme
-        </button>
-        <button
-          type="button"
-          className={`btn-status btn-status-nao-conforme ${item.status === "nao-conforme" ? "active" : ""}`}
-          onClick={() => handleStatusClick("nao-conforme")}
-          disabled={busy}
-        >
-          Não conforme
-        </button>
-        <button
-          type="button"
-          className={`btn-status btn-status-nao-se-aplica ${item.status === "nao-se-aplica" ? "active" : ""}`}
-          onClick={() => handleStatusClick("nao-se-aplica")}
-          disabled={busy}
-        >
-          N/A
-        </button>
-      </div>
-
-      {pendingStatus && (
-        <form className="justification-form" onSubmit={handleSubmitForm}>
-          {pendingStatus === "nao-conforme" && (
-            <textarea
-              value={justification}
-              onChange={(e) => setJustification(e.target.value)}
-              placeholder="Motivo da não conformidade"
-              required
-            />
-          )}
-          {item.requiresPhoto && (
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)}
-            />
-          )}
-          {pendingStatus === "nao-conforme" && (
-            <div className="anomaly-notice">
-              Ao salvar, uma anomalia de <strong>Operacional</strong> será aberta em{" "}
-              <strong>{guessSetorFromText(checklistTypeName)}</strong> com este texto.
-            </div>
-          )}
+      {askPhoto && (
+        <form className="justification-form" onSubmit={handleSubmitPhoto}>
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)}
+          />
           {error && <p className="login-error">{error}</p>}
           <div className="justification-form-buttons">
-            <button
-              type="button"
-              className="btn-cancel"
-              onClick={() => setPendingStatus(null)}
-            >
+            <button type="button" className="btn-cancel" onClick={() => setAskPhoto(false)}>
               Cancelar
             </button>
             <button className="btn-save" type="submit" disabled={busy}>
-              {uploading ? "Enviando foto..." : "Salvar"}
+              {uploading ? "Enviando foto..." : "Concluir"}
             </button>
           </div>
         </form>
       )}
 
-      {!pendingStatus && error && <p className="login-error">{error}</p>}
+      {!askPhoto && error && <p className="login-error">{error}</p>}
 
-      {!pendingStatus && item.status === "nao-conforme" && item.justification && (
+      {status === "nao-conforme" && item.justification && (
         <div className="justification-box">
-          <strong>Justificativa:</strong> {item.justification}{" "}
-          <button
-            type="button"
-            className="btn-small"
-            onClick={() => openForm("nao-conforme")}
-            style={{ marginLeft: 8 }}
-          >
-            Editar
-          </button>
+          <strong>Justificativa:</strong> {item.justification}
         </div>
       )}
 
-      {!pendingStatus && item.photoUrl && (
+      {item.photoUrl && (
         <div className="justification-box">
           <strong>Evidência:</strong>{" "}
           <a href={item.photoUrl} target="_blank" rel="noopener noreferrer">
