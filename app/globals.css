@@ -3201,3 +3201,9 @@ a.plano-item { display: block; }
 .audit-renomear { display: flex; flex-wrap: wrap; gap: 8px; }
 .audit-renomear input { flex: 1 1 200px; min-width: 0; font-weight: 600; }
 .audit-pergunta .modelo-badge { max-width: 100%; overflow-wrap: anywhere; }
+
+.escala-inicio { margin-bottom: 12px; }
+.escala-inicio .inline-form { max-width: 520px; margin-bottom: 8px; }
+.escala-semana { display: flex; gap: 4px; flex-wrap: wrap; }
+.escala-dia { min-width: 38px; text-align: center; font-size: 12px; font-weight: 700; padding: 5px 0; border-radius: 8px; border: 1px solid var(--border); color: var(--text-faint); background: var(--control); }
+.escala-dia.folga { background: var(--kenkyo-red); border-color: var(--kenkyo-red); color: #fff; }

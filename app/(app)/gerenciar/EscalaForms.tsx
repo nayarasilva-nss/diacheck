@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { adicionarExcecaoEscala, definirInicioEscala } from "@/lib/actions/escala";
 
 type Pessoa = { id: number; name: string; unitName: string | null };
@@ -23,8 +23,11 @@ export function InicioEscalaForm({ desde }: { desde: string | null }) {
   );
 }
 
-export function ExcecaoForm({ pessoas }: { pessoas: Pessoa[] }) {
+export function ExcecaoForm({ pessoas, onDone }: { pessoas: Pessoa[]; onDone?: () => void }) {
   const [state, action, pending] = useActionState(adicionarExcecaoEscala, undefined);
+  useEffect(() => {
+    if (state?.ok) onDone?.();
+  }, [state, onDone]);
   return (
     <form action={action} className="inline-form">
       <h4>Lançar folga ou troca</h4>
