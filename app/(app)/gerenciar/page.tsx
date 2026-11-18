@@ -167,17 +167,7 @@ export default async function GerenciarPage({
 
       {tab === "auditoria" && <AuditoriaBoard groups={auditTemplate} />}
 
-      {tab === "marca" && organization && (
-        <div className="board-layout">
-          <div className="detail-panel" style={{ minHeight: "auto" }}>
-            <p className="items-count" style={{ marginBottom: 14 }}>
-              Nome, logo e cor usados no menu, nos documentos gerados (PDFs de checklist e
-              requisição) e no visual do sistema pra quem faz login na sua empresa.
-            </p>
-            <BrandForm organization={organization} />
-          </div>
-        </div>
-      )}
+      {tab === "marca" && organization && <BrandForm organization={organization} />}
     </>
   );
 }
