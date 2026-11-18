@@ -3195,3 +3195,9 @@ a.plano-item { display: block; }
 .grupo-recolhivel > summary::before { content: "▸"; color: var(--text-faint); margin-right: 6px; }
 .grupo-recolhivel[open] > summary::before { content: "▾"; }
 .modelos-grupo-titulo .link-btn { margin-left: auto; text-transform: none; letter-spacing: 0; }
+
+.audit-label { font-weight: 600; font-size: 14px; flex: 1 1 200px; min-width: 0; }
+.audit-grupo-acoes { display: grid; gap: 8px; margin: 4px 0 10px; }
+.audit-renomear { display: flex; flex-wrap: wrap; gap: 8px; }
+.audit-renomear input { flex: 1 1 200px; min-width: 0; font-weight: 600; }
+.audit-pergunta .modelo-badge { max-width: 100%; overflow-wrap: anywhere; }

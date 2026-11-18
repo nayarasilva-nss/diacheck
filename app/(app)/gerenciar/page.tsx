@@ -10,7 +10,7 @@ import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
 import { getFormDefinitions } from "@/lib/data/form-definitions";
 import { getOrganizationById } from "@/lib/data/organizations";
 import { BrandForm } from "./BrandForm";
-import { AuditTemplateEditor } from "./AuditTemplateEditor";
+import { AuditoriaBoard } from "./AuditoriaBoard";
 import { getAuditTemplate } from "@/lib/data/audits";
 import { ErpPainel } from "./ErpPainel";
 import { EscalaPainel } from "./EscalaPainel";
@@ -165,7 +165,7 @@ export default async function GerenciarPage({
 
       {tab === "erp" && <ErpPainel organizationId={gestor.organizationId!} />}
 
-      {tab === "auditoria" && <AuditTemplateEditor groups={auditTemplate} />}
+      {tab === "auditoria" && <AuditoriaBoard groups={auditTemplate} />}
 
       {tab === "marca" && organization && (
         <div className="board-layout">
