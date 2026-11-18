@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 
-export type EditableItem = { label: string; requiresPhoto: boolean };
+export type EditableItem = { id?: number; label: string; requiresPhoto: boolean };
 
 export function ChecklistItemsEditor({
   name,
   initialItems,
+  titulo = "Tarefas",
 }: {
   name: string;
   initialItems: EditableItem[];
+  titulo?: string;
 }) {
   const [items, setItems] = useState<EditableItem[]>(
     initialItems.length > 0
@@ -49,7 +51,7 @@ export function ChecklistItemsEditor({
 
   return (
     <div className="form-group">
-      <label>Tarefas</label>
+      <label>{titulo}</label>
       <input type="hidden" name={name} value={JSON.stringify(items)} />
       {items.map((item, index) => (
         <div className="item-editor-row" key={index}>

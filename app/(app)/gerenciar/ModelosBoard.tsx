@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ChecklistTypeRow } from "./ChecklistTypeRow";
 import { AddChecklistTypeForm } from "./AddChecklistTypeForm";
 import type { EditableItem } from "./ChecklistItemsEditor";
+import type { Personalizacao } from "./PersonalizacaoPainel";
 
 type Option = { id: number; name: string };
 
@@ -20,6 +21,7 @@ export type ModeloChecklist = {
   assignedUserId: number | null;
   assignedUserName: string | null;
   prerequisiteIds: number[];
+  personalizacoes?: Personalizacao[];
 };
 
 const SEM_FUNCAO = "Todas as funções";

@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { requireGestor } from "@/lib/auth/dal";
@@ -9,6 +9,8 @@ import {
   users,
   checklistTypes,
   checklistTypeItems,
+  checklistTypeUsers,
+  checklistItemHidden,
   checklistTypePrerequisites,
   units,
   jobFunctions,
@@ -407,7 +409,7 @@ export async function updateChecklistType(
   const existingItems = await db
     .select()
     .from(checklistTypeItems)
-    .where(eq(checklistTypeItems.checklistTypeId, id))
+    .where(and(eq(checklistTypeItems.checklistTypeId, id), isNull(checklistTypeItems.ownerUserId)))
     .orderBy(asc(checklistTypeItems.position));
 
   for (let position = 0; position < items.length; position++) {
@@ -480,7 +482,7 @@ export async function duplicateChecklistType(formData: FormData) {
   const itens = await db
     .select()
     .from(checklistTypeItems)
-    .where(eq(checklistTypeItems.checklistTypeId, id))
+    .where(and(eq(checklistTypeItems.checklistTypeId, id), isNull(checklistTypeItems.ownerUserId)))
     .orderBy(asc(checklistTypeItems.position));
   if (itens.length > 0) {
     await db.insert(checklistTypeItems).values(
@@ -503,5 +505,102 @@ export async function duplicateChecklistType(formData: FormData) {
     );
   }
 
+  revalidateManageViews();
+}
+
+/** Atribui o modelo a um colaborador (além da função) e grava a versão dele:
+ * tarefas do modelo que ele não recebe + tarefas extras só dele. */
+export async function salvarPersonalizacao(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
+
+  const typeId = Number(formData.get("checklistTypeId"));
+  const userId = Number(formData.get("userId"));
+  if (!typeId || !userId) return { error: "Escolha o colaborador" };
+
+  const [modelo] = await db
+    .select({ id: checklistTypes.id })
+    .from(checklistTypes)
+    .where(and(eq(checklistTypes.id, typeId), eq(checklistTypes.organizationId, gestor.organizationId)));
+  const [pessoa] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.id, userId), eq(users.organizationId, gestor.organizationId)));
+  if (!modelo || !pessoa) return { error: "Modelo ou colaborador não encontrado" };
+
+  const escondidasIds = formData.getAll("hiddenItemIds").map(Number).filter((n) => Number.isFinite(n) && n > 0);
+  const extras = parseItems(formData);
+
+  const base = await db
+    .select({ id: checklistTypeItems.id })
+    .from(checklistTypeItems)
+    .where(and(eq(checklistTypeItems.checklistTypeId, typeId), isNull(checklistTypeItems.ownerUserId)));
+  const baseIds = new Set(base.map((b) => b.id));
+  const esconder = escondidasIds.filter((i) => baseIds.has(i));
+  if (esconder.length >= baseIds.size && extras.length === 0) {
+    return { error: "Esse colaborador ficaria sem nenhuma tarefa. Deixe pelo menos uma." };
+  }
+
+  await db.insert(checklistTypeUsers).values({ checklistTypeId: typeId, userId }).onConflictDoNothing();
+
+  await db
+    .delete(checklistItemHidden)
+    .where(and(eq(checklistItemHidden.userId, userId), inArray(checklistItemHidden.itemId, [...baseIds, -1])));
+  if (esconder.length > 0) {
+    await db.insert(checklistItemHidden).values(esconder.map((itemId) => ({ itemId, userId })));
+  }
+
+  // Extras: mesma regra do modelo (por posição), para não perder o histórico das que não mudaram.
+  const atuais = await db
+    .select()
+    .from(checklistTypeItems)
+    .where(and(eq(checklistTypeItems.checklistTypeId, typeId), eq(checklistTypeItems.ownerUserId, userId)))
+    .orderBy(asc(checklistTypeItems.position));
+  const offset = 1000; // extras ficam depois das do modelo na ordem
+  for (let i = 0; i < extras.length; i++) {
+    const novo = extras[i];
+    const atual = atuais[i];
+    if (atual) {
+      if (atual.label !== novo.label || atual.requiresPhoto !== novo.requiresPhoto) {
+        await db
+          .update(checklistTypeItems)
+          .set({ label: novo.label, requiresPhoto: novo.requiresPhoto })
+          .where(eq(checklistTypeItems.id, atual.id));
+      }
+    } else {
+      await db.insert(checklistTypeItems).values({
+        checklistTypeId: typeId,
+        label: novo.label,
+        requiresPhoto: novo.requiresPhoto,
+        position: offset + i,
+        ownerUserId: userId,
+      });
+    }
+  }
+  if (atuais.length > extras.length) {
+    await db.delete(checklistTypeItems).where(inArray(checklistTypeItems.id, atuais.slice(extras.length).map((a) => a.id)));
+  }
+
+  revalidateManageViews();
+}
+
+/** Tira o modelo do colaborador. A versão personalizada fica guardada: se ele
+ * voltar a receber o modelo, as escolhas e o histórico estão lá. */
+export async function removerColaboradorDoModelo(formData: FormData) {
+  const gestor = await requireGestor();
+  const typeId = Number(formData.get("checklistTypeId"));
+  const userId = Number(formData.get("userId"));
+  if (!typeId || !userId || !gestor.organizationId) return;
+  const [modelo] = await db
+    .select({ id: checklistTypes.id })
+    .from(checklistTypes)
+    .where(and(eq(checklistTypes.id, typeId), eq(checklistTypes.organizationId, gestor.organizationId)));
+  if (!modelo) return;
+  await db
+    .delete(checklistTypeUsers)
+    .where(and(eq(checklistTypeUsers.checklistTypeId, typeId), eq(checklistTypeUsers.userId, userId)));
   revalidateManageViews();
 }

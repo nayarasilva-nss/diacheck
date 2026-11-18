@@ -2,6 +2,7 @@ import { carregarEscala } from "@/lib/data/escala";
 import "server-only";
 import { and, eq, gte, inArray, isNotNull, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { modelosExtrasDe, tarefasDoColaborador, tarefasEscondidasDe } from "@/lib/data/personalizacao";
 import { checklistCompletions, checklistTypeItems, checklistTypes, units, users } from "@/lib/db/schema";
 import { daysBeforeISO } from "@/lib/date-utils";
 import { deadlineMinutes, effortScore, minutesIntoChecklistDay, punctualityScore, qualityScore, type ScoreItem } from "@/lib/checklist-scoring";
@@ -71,12 +72,15 @@ async function loadInstances(organizationId: number, from: string, to: string, u
     .where(and(eq(checklistTypes.organizationId, organizationId), eq(checklistTypes.type, "daily"), eq(checklistTypes.active, true)));
   const items = types.length
     ? await db
-        .select({ id: checklistTypeItems.id, checklistTypeId: checklistTypeItems.checklistTypeId, requiresPhoto: checklistTypeItems.requiresPhoto })
+        .select({ id: checklistTypeItems.id, checklistTypeId: checklistTypeItems.checklistTypeId, requiresPhoto: checklistTypeItems.requiresPhoto, ownerUserId: checklistTypeItems.ownerUserId })
         .from(checklistTypeItems)
         .where(inArray(checklistTypeItems.checklistTypeId, types.map((t) => t.id)))
     : [];
   const itemsByType = new Map<number, typeof items>();
   for (const it of items) itemsByType.set(it.checklistTypeId, [...(itemsByType.get(it.checklistTypeId) ?? []), it]);
+  const peopleIds = people.map((p) => p.id);
+  const extrasPorPessoa = await modelosExtrasDe(peopleIds);
+  const escondidasPorPessoa = await tarefasEscondidasDe(peopleIds);
 
   const rows = people.length
     ? await db
@@ -95,8 +99,8 @@ async function loadInstances(organizationId: number, from: string, to: string, u
   const insts: Inst[] = [];
   for (const p of people) {
     for (const t of types) {
-      const visible = t.assignedUserId !== null ? t.assignedUserId === p.id : t.jobFunctionId === null || t.jobFunctionId === p.jobFunctionId;
-      const typeItems = itemsByType.get(t.id) ?? [];
+      const visible = extrasPorPessoa.get(p.id)?.has(t.id) || (t.assignedUserId !== null ? t.assignedUserId === p.id : t.jobFunctionId === null || t.jobFunctionId === p.jobFunctionId);
+      const typeItems = tarefasDoColaborador(itemsByType.get(t.id) ?? [], p.id, escondidasPorPessoa.get(p.id));
       if (!visible || typeItems.length === 0) continue;
       for (const date of days) {
         if (escala.deFolga(p.id, p.folgaDias, date)) continue; // dia de folga: não era esperado

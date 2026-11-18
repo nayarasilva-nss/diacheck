@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { isGestorProfile } from "@/lib/auth/profile";
 import { db } from "@/lib/db";
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
       .leftJoin(jobFunctions, eq(jobFunctions.id, checklistTypes.jobFunctionId))
       .where(eq(checklistTypes.organizationId, orgId))
       .orderBy(asc(checklistTypes.name));
-    const itens = tipos.length ? await db.select().from(checklistTypeItems).where(inArray(checklistTypeItems.checklistTypeId, tipos.map((t) => t.id))).orderBy(asc(checklistTypeItems.checklistTypeId), asc(checklistTypeItems.position)) : [];
+    const itens = tipos.length ? await db.select().from(checklistTypeItems).where(and(inArray(checklistTypeItems.checklistTypeId, tipos.map((t) => t.id)), isNull(checklistTypeItems.ownerUserId))).orderBy(asc(checklistTypeItems.checklistTypeId), asc(checklistTypeItems.position)) : [];
     buffer = await montarPlanilha(
       tipos.map((t) => ({ nome: t.name, tipo: t.type, funcao: t.funcao, horario: t.horario, descricao: t.desc, itens: itens.filter((i) => i.checklistTypeId === t.id).map((i) => ({ label: i.label, requiresPhoto: i.requiresPhoto })) })),
       funcoes,

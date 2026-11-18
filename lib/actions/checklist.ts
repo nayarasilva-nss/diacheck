@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
@@ -31,7 +31,7 @@ function revalidateChecklistViews() {
   revalidatePath("/relatorio");
 }
 
-async function getItemContext(itemId: number, checklistTypeId: number, organizationId: number) {
+async function getItemContext(itemId: number, checklistTypeId: number, organizationId: number, userId: number) {
   const [row] = await db
     .select({
       requiresPhoto: checklistTypeItems.requiresPhoto,
@@ -49,6 +49,8 @@ async function getItemContext(itemId: number, checklistTypeId: number, organizat
         eq(checklistTypeItems.checklistTypeId, checklistTypeId),
         eq(checklistTypes.organizationId, organizationId),
         eq(checklistTypes.active, true),
+        // tarefa extra de outro colaborador não é desta pessoa
+        or(isNull(checklistTypeItems.ownerUserId), eq(checklistTypeItems.ownerUserId, userId)),
       ),
     )
     .limit(1);
@@ -77,7 +79,7 @@ export async function setChecklistItemStatus(
   }
 
   if (!user.organizationId) return { error: "Conta sem empresa associada" };
-  const context = await getItemContext(itemId, checklistTypeId, user.organizationId);
+  const context = await getItemContext(itemId, checklistTypeId, user.organizationId, user.id);
   if (!context) return { error: "Item não encontrado" };
 
   if (status === "pending") {

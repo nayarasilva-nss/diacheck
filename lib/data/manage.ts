@@ -7,6 +7,8 @@ import {
   checklistTypes,
   checklistTypeItems,
   checklistTypePrerequisites,
+  checklistTypeUsers,
+  checklistItemHidden,
   units,
   jobFunctions,
 } from "@/lib/db/schema";
@@ -55,18 +57,20 @@ export async function getChecklistTypesWithCounts(organizationId: number) {
     .leftJoin(assignedUsers, eq(assignedUsers.id, checklistTypes.assignedUserId))
     .where(eq(checklistTypes.organizationId, organizationId))
     .orderBy(asc(checklistTypes.id));
-  const items = await db
+  const todosItens = await db
     .select()
     .from(checklistTypeItems)
+    .where(inArray(checklistTypeItems.checklistTypeId, types.length ? types.map((t) => t.id) : [-1]))
     .orderBy(asc(checklistTypeItems.position));
+  const items = todosItens.filter((i) => i.ownerUserId === null);
 
   const itemsByType = new Map<
     number,
-    { label: string; requiresPhoto: boolean }[]
+    { id: number; label: string; requiresPhoto: boolean }[]
   >();
   for (const item of items) {
     const list = itemsByType.get(item.checklistTypeId) ?? [];
-    list.push({ label: item.label, requiresPhoto: item.requiresPhoto });
+    list.push({ id: item.id, label: item.label, requiresPhoto: item.requiresPhoto });
     itemsByType.set(item.checklistTypeId, list);
   }
 
@@ -86,11 +90,37 @@ export async function getChecklistTypesWithCounts(organizationId: number) {
     prereqsByType.set(row.checklistTypeId, list);
   }
 
+  // Personalizações: quem recebe o modelo além da função, o que esconde e o que tem de extra.
+  const tipoIds = types.length ? types.map((t) => t.id) : [-1];
+  const colabRows = await db
+    .select({ typeId: checklistTypeUsers.checklistTypeId, userId: checklistTypeUsers.userId, name: users.name })
+    .from(checklistTypeUsers)
+    .innerJoin(users, eq(users.id, checklistTypeUsers.userId))
+    .where(inArray(checklistTypeUsers.checklistTypeId, tipoIds));
+  const escondidasRows = await db
+    .select({ itemId: checklistItemHidden.itemId, userId: checklistItemHidden.userId })
+    .from(checklistItemHidden)
+    .where(inArray(checklistItemHidden.itemId, todosItens.length ? todosItens.map((i) => i.id) : [-1]));
+  const typeOfItem = new Map(todosItens.map((i) => [i.id, i.checklistTypeId]));
+
   return types.map((t) => {
     const typeItems = itemsByType.get(t.id) ?? [];
+    const personalizacoes = colabRows
+      .filter((c) => c.typeId === t.id)
+      .map((c) => ({
+        userId: c.userId,
+        userName: c.name,
+        hiddenItemIds: escondidasRows
+          .filter((h) => h.userId === c.userId && typeOfItem.get(h.itemId) === t.id)
+          .map((h) => h.itemId),
+        extras: todosItens
+          .filter((i) => i.checklistTypeId === t.id && i.ownerUserId === c.userId)
+          .map((i) => ({ label: i.label, requiresPhoto: i.requiresPhoto })),
+      }));
     return {
       ...t,
       items: typeItems,
+      personalizacoes,
       itemCount: typeItems.length,
       prerequisiteIds: prereqsByType.get(t.id) ?? [],
     };

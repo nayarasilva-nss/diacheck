@@ -1,6 +1,7 @@
 import "server-only";
 import { isGestorProfile } from "@/lib/auth/profile";
 import { and, asc, eq, inArray } from "drizzle-orm";
+import { modelosExtrasDe, tarefasDoColaborador, tarefasEscondidasDe } from "@/lib/data/personalizacao";
 import { db } from "@/lib/db";
 import {
   checklistTypes,
@@ -34,9 +35,12 @@ function visibleToViewer(jobFunctionId: number | null, viewer: Viewer) {
 }
 
 function checklistVisibleToViewer(
-  checklistType: { jobFunctionId: number | null; assignedUserId: number | null },
+  checklistType: { id: number; jobFunctionId: number | null; assignedUserId: number | null },
   viewer: Viewer & { id: number },
+  modelosExtras?: Set<number>,
 ) {
+  // Atribuído a este colaborador além da função dele (Gerenciar > Modelos).
+  if (modelosExtras?.has(checklistType.id)) return true;
   if (checklistType.assignedUserId !== null) {
     return checklistType.assignedUserId === viewer.id;
   }
@@ -97,10 +101,12 @@ export async function getUnmetPrerequisites(
   if (prereqs.length === 0) return [];
 
   const prereqTypeIds = prereqs.map((p) => p.requiresChecklistTypeId);
-  const items = await db
-    .select({ id: checklistTypeItems.id, checklistTypeId: checklistTypeItems.checklistTypeId })
+  const todosItens = await db
+    .select({ id: checklistTypeItems.id, checklistTypeId: checklistTypeItems.checklistTypeId, ownerUserId: checklistTypeItems.ownerUserId })
     .from(checklistTypeItems)
     .where(inArray(checklistTypeItems.checklistTypeId, prereqTypeIds));
+  const escondidas = (await tarefasEscondidasDe([userId])).get(userId);
+  const items = tarefasDoColaborador(todosItens, userId, escondidas);
 
   const itemIds = items.map((i) => i.id);
   const completions =
@@ -147,7 +153,8 @@ export async function getChecklistsForUser(
     .where(and(eq(checklistTypes.type, type), eq(checklistTypes.organizationId, viewer.organizationId), eq(checklistTypes.active, true)))
     .orderBy(asc(checklistTypes.id));
 
-  const types = allTypes.filter((t) => checklistVisibleToViewer(t, viewer));
+  const modelosExtras = (await modelosExtrasDe([viewer.id])).get(viewer.id);
+  const types = allTypes.filter((t) => checklistVisibleToViewer(t, viewer, modelosExtras));
 
   if (types.length === 0) return [];
 
@@ -167,11 +174,15 @@ export async function getChecklistsForUser(
     assignedUsers.map((u) => [u.id, u.name]),
   );
 
-  const items = await db
-    .select()
-    .from(checklistTypeItems)
-    .where(inArray(checklistTypeItems.checklistTypeId, typeIds))
-    .orderBy(asc(checklistTypeItems.position));
+  const items = tarefasDoColaborador(
+    await db
+      .select()
+      .from(checklistTypeItems)
+      .where(inArray(checklistTypeItems.checklistTypeId, typeIds))
+      .orderBy(asc(checklistTypeItems.position)),
+    viewer.id,
+    (await tarefasEscondidasDe([viewer.id])).get(viewer.id),
+  );
 
   const itemIds = items.map((i) => i.id);
 
@@ -245,13 +256,18 @@ export async function getChecklistForUser(
     .limit(1);
 
   if (!checklistType) return null;
-  if (!checklistVisibleToViewer(checklistType, viewer)) return null;
+  const modelosExtras = (await modelosExtrasDe([viewer.id])).get(viewer.id);
+  if (!checklistVisibleToViewer(checklistType, viewer, modelosExtras)) return null;
 
-  const items = await db
-    .select()
-    .from(checklistTypeItems)
-    .where(eq(checklistTypeItems.checklistTypeId, checklistTypeId))
-    .orderBy(asc(checklistTypeItems.position));
+  const items = tarefasDoColaborador(
+    await db
+      .select()
+      .from(checklistTypeItems)
+      .where(eq(checklistTypeItems.checklistTypeId, checklistTypeId))
+      .orderBy(asc(checklistTypeItems.position)),
+    viewer.id,
+    (await tarefasEscondidasDe([viewer.id])).get(viewer.id),
+  );
 
   const itemIds = items.map((i) => i.id);
   const completions =
@@ -339,11 +355,15 @@ export async function getChecklistExportData(
     ? await db.select({ name: units.name }).from(units).where(eq(units.id, unitId)).limit(1)
     : [null];
 
-  const items = await db
-    .select()
-    .from(checklistTypeItems)
-    .where(eq(checklistTypeItems.checklistTypeId, checklistTypeId))
-    .orderBy(asc(checklistTypeItems.position));
+  const items = tarefasDoColaborador(
+    await db
+      .select()
+      .from(checklistTypeItems)
+      .where(eq(checklistTypeItems.checklistTypeId, checklistTypeId))
+      .orderBy(asc(checklistTypeItems.position)),
+    userId,
+    (await tarefasEscondidasDe([userId])).get(userId),
+  );
 
   const itemIds = items.map((i) => i.id);
   const completions =

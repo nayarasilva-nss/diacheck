@@ -232,7 +232,41 @@ export const checklistTypeItems = pgTable("checklist_type_items", {
   // toda contada) for every active location of the unit — see
   // setChecklistItemStatus and the ERP's GET /api/contagens (`semana`).
   requiresContagem: boolean("requires_contagem").notNull().default(false),
+  // Preenchido = tarefa extra, só deste colaborador (personalização do
+  // modelo). Null = tarefa do modelo base, que todos da função recebem.
+  ownerUserId: integer("owner_user_id").references(() => users.id, { onDelete: "cascade" }),
 });
+
+// Colaboradores que recebem o modelo além da função dele (e que podem ter
+// uma versão personalizada: tarefas do modelo escondidas + tarefas extras).
+export const checklistTypeUsers = pgTable(
+  "checklist_type_users",
+  {
+    id: serial("id").primaryKey(),
+    checklistTypeId: integer("checklist_type_id")
+      .notNull()
+      .references(() => checklistTypes.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (table) => [uniqueIndex("checklist_type_users_idx").on(table.checklistTypeId, table.userId)],
+);
+
+// Tarefas do modelo base que um colaborador não recebe.
+export const checklistItemHidden = pgTable(
+  "checklist_item_hidden",
+  {
+    id: serial("id").primaryKey(),
+    itemId: integer("item_id")
+      .notNull()
+      .references(() => checklistTypeItems.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (table) => [uniqueIndex("checklist_item_hidden_idx").on(table.itemId, table.userId)],
+);
 
 // Pré-requisito configurável entre modelos de checklist — ex: "Fechamento"
 // só libera depois que "Abertura" e "Meio de Turno" estiverem 100%

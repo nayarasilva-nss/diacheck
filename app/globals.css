@@ -3177,3 +3177,10 @@ a.plano-item { display: block; }
 .item-check:focus-visible { outline: 2px solid var(--kenkyo-red); outline-offset: 2px; border-radius: 50%; }
 .item-text { align-self: center; }
 .item-text.feito { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--text-faint); }
+
+.modelo-versoes { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); display: grid; gap: 8px; }
+.modelo-versoes h5 { margin: 0; font-size: 13px; font-weight: 800; }
+.modelo-versao { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.modelo-versao-nome { font-weight: 700; flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; }
+.modelo-versao-novo { display: flex; flex-wrap: wrap; gap: 8px; }
+.modelo-versao-novo select { flex: 1 1 200px; min-width: 0; }

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { updateChecklistType, deleteChecklistType, duplicateChecklistType } from "@/lib/actions/manage";
 import { DeleteButton } from "./DeleteButton";
 import { ChecklistItemsEditor, type EditableItem } from "./ChecklistItemsEditor";
+import { PersonalizacaoPainel, type Personalizacao } from "./PersonalizacaoPainel";
 
 const TYPE_LABELS = { daily: "Diário", weekly: "Semanal" } as const;
 
@@ -22,6 +23,7 @@ type ChecklistType = {
   assignedUserId: number | null;
   assignedUserName: string | null;
   prerequisiteIds: number[];
+  personalizacoes?: Personalizacao[];
 };
 
 export function ChecklistTypeRow({
@@ -81,6 +83,9 @@ export function ChecklistTypeRow({
           {fotos > 0 && <span className="modelo-badge">{fotos} com foto</span>}
           {checklistType.deadlineTime && <span className="modelo-badge">até {checklistType.deadlineTime.slice(0, 5)}</span>}
           {checklistType.assignedUserName && <span className="modelo-badge">só {checklistType.assignedUserName}</span>}
+          {(checklistType.personalizacoes?.length ?? 0) > 0 && (
+            <span className="modelo-badge">{checklistType.personalizacoes!.length} com versão própria</span>
+          )}
           {pre.length > 0 && <span className="modelo-badge">depois de {pre.map((p) => p.name).join(", ")}</span>}
         </div>
         {mostrar && (
@@ -94,6 +99,12 @@ export function ChecklistTypeRow({
                 </li>
               ))}
             </ol>
+            <PersonalizacaoPainel
+              checklistTypeId={checklistType.id}
+              items={checklistType.items}
+              personalizacoes={checklistType.personalizacoes ?? []}
+              users={users}
+            />
           </div>
         )}
       </div>
