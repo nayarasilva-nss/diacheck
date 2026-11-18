@@ -3,8 +3,8 @@
 import { useRef, useState, useTransition } from "react";
 import { createCategory } from "@/lib/actions/catalog";
 
-export function AddCategoryForm() {
-  const [open, setOpen] = useState(false);
+export function AddCategoryForm({ startOpen = false, onDone }: { startOpen?: boolean; onDone?: () => void }) {
+  const [open, setOpen] = useState(startOpen);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -28,6 +28,7 @@ export function AddCategoryForm() {
         setError(undefined);
         setOpen(false);
         formRef.current?.reset();
+        onDone?.();
       }
     });
   }
@@ -41,7 +42,7 @@ export function AddCategoryForm() {
       </div>
       {error && <p className="login-error">{error}</p>}
       <div className="inline-form-buttons">
-        <button type="button" className="btn-cancel" onClick={() => setOpen(false)}>
+        <button type="button" className="btn-cancel" onClick={() => { setOpen(false); onDone?.(); }}>
           Cancelar
         </button>
         <button className="btn-save" type="submit" disabled={isPending}>

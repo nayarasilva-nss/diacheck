@@ -8,11 +8,15 @@ type Option = { id: number; name: string };
 export function AddUserForm({
   units,
   jobFunctions,
+  startOpen = false,
+  onDone,
 }: {
+  startOpen?: boolean;
+  onDone?: () => void;
   units: Option[];
   jobFunctions: Option[];
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -36,6 +40,7 @@ export function AddUserForm({
         setError(undefined);
         setOpen(false);
         formRef.current?.reset();
+        onDone?.();
       }
     });
   }
@@ -101,7 +106,7 @@ export function AddUserForm({
         <button
           type="button"
           className="btn-cancel"
-          onClick={() => setOpen(false)}
+          onClick={() => { setOpen(false); onDone?.(); }}
         >
           Cancelar
         </button>

@@ -8,16 +8,10 @@ import {
 } from "@/lib/data/manage";
 import { deleteUnit } from "@/lib/actions/manage";
 import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
-import { AddUserForm } from "./AddUserForm";
-import { UserRow } from "./UserRow";
 import { AddUnitForm } from "./AddUnitForm";
 import { AddJobFunctionForm } from "./AddJobFunctionForm";
 import { JobFunctionRow } from "./JobFunctionRow";
 import { DeleteButton } from "./DeleteButton";
-import { AddCategoryForm } from "./AddCategoryForm";
-import { CategoryRow } from "./CategoryRow";
-import { AddCatalogItemForm } from "./AddCatalogItemForm";
-import { CatalogItemRow } from "./CatalogItemRow";
 import { AddFormDefinitionForm } from "./AddFormDefinitionForm";
 import { FormDefinitionRow } from "./FormDefinitionRow";
 import { getFormDefinitions } from "@/lib/data/form-definitions";
@@ -29,6 +23,8 @@ import { ErpPainel } from "./ErpPainel";
 import { EscalaPainel } from "./EscalaPainel";
 import { ImportarModelos } from "./ImportarModelos";
 import { ModelosBoard } from "./ModelosBoard";
+import { UsuariosBoard } from "./UsuariosBoard";
+import { CatalogoBoard } from "./CatalogoBoard";
 
 // Abas agrupadas por assunto. As chaves (?tab=...) continuam as mesmas, então links antigos seguem valendo.
 type Grupo = { key: string; label: string; ajuda: string; tabs: { key: string; label: string }[] };
@@ -136,21 +132,7 @@ export default async function GerenciarPage({
 
       {tab === "escala" && <EscalaPainel organizationId={gestor.organizationId!} />}
 
-      {tab === "usuarios" && (
-        <div className="board-layout">
-          <div className="today-card">
-            <div className="today-card-title" style={{ marginBottom: 14 }}>
-              Usuários · {users.length}
-            </div>
-            {users.map((user) => (
-              <UserRow key={user.id} user={user} units={units} jobFunctions={jobFunctions} />
-            ))}
-          </div>
-          <div className="detail-panel" style={{ minHeight: "auto" }}>
-            <AddUserForm units={units} jobFunctions={jobFunctions} />
-          </div>
-        </div>
-      )}
+      {tab === "usuarios" && <UsuariosBoard usuarios={users} units={units} jobFunctions={jobFunctions} />}
 
       {tab === "modelos" && <ImportarModelos />}
 
@@ -220,33 +202,7 @@ export default async function GerenciarPage({
         </div>
       )}
 
-      {tab === "catalogo" && (
-        <div className="board-layout">
-          <div className="today-card">
-            <div className="today-card-title" style={{ marginBottom: 14 }}>
-              Categorias · {catalogCategories.length}
-            </div>
-            {catalogCategories.map((category) => (
-              <CategoryRow key={category.id} category={category} />
-            ))}
-          </div>
-          <div className="detail-panel" style={{ minHeight: "auto" }}>
-            <AddCategoryForm />
-          </div>
-
-          <div className="today-card">
-            <div className="today-card-title" style={{ marginBottom: 14 }}>
-              Produtos · {catalogItems.length}
-            </div>
-            {catalogItems.map((item) => (
-              <CatalogItemRow key={item.id} item={item} categories={catalogCategories} />
-            ))}
-          </div>
-          <div className="detail-panel" style={{ minHeight: "auto" }}>
-            <AddCatalogItemForm categories={catalogCategories} />
-          </div>
-        </div>
-      )}
+      {tab === "catalogo" && <CatalogoBoard categorias={catalogCategories} produtos={catalogItems} />}
 
       {tab === "erp" && <ErpPainel organizationId={gestor.organizationId!} />}
 

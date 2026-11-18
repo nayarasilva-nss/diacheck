@@ -32,20 +32,22 @@ export function CategoryRow({ category }: { category: Category }) {
         : "Sem dia de pedido definido";
 
     return (
-      <div className="list-item">
-        <div className="info">
-          <h4>{category.name}</h4>
-          <p>Dia de pedido: {diasLabel}</p>
-        </div>
-        <div className="list-item-actions">
-          <button className="btn-small" type="button" onClick={() => setEditing(true)}>
-            Editar
-          </button>
-          <DeleteButton
-            action={deleteCategory}
-            id={category.id}
-            confirmText={`Deletar a categoria "${category.name}"? Os produtos dela ficam sem categoria.`}
-          />
+      <div className="modelo-card compacto">
+        <div className="modelo-card-topo">
+          <div className="modelo-card-titulo static">
+            <span className="modelo-nome">{category.name}</span>
+            <span className="modelo-badge">{category.orderDays.length > 0 ? `pede: ${diasLabel}` : "sem dia de pedido"}</span>
+          </div>
+          <div className="list-item-actions">
+            <button className="btn-small" type="button" onClick={() => setEditing(true)}>
+              Editar
+            </button>
+            <DeleteButton
+              action={deleteCategory}
+              id={category.id}
+              confirmText={`Deletar a categoria "${category.name}"? Os produtos dela ficam sem categoria.`}
+            />
+          </div>
         </div>
       </div>
     );

@@ -44,37 +44,33 @@ export function UserRow({
   const [isPending, startTransition] = useTransition();
 
   if (!editing) {
+    const extras = units.filter((u) => user.requisicaoUnidadesExtras.includes(u.id)).map((u) => u.name);
     return (
-      <div className="list-item">
-        <div className="info">
-          <h4>{user.name}</h4>
-          <p>
-            @{user.username} • {PROFILE_LABELS[user.profile] ?? user.profile}
-            {" • "}
-            {user.unitName ?? "Sem unidade"}
-            {" • "}
-            {user.jobFunctionName ?? "Sem função"}
-            {!user.checklistObrigatorio && " • sem checklist obrigatório"}
-            {user.requisicaoUnidadesExtras.length > 0 && ` • requisições também de ${units.filter((u) => user.requisicaoUnidadesExtras.includes(u.id)).map((u) => u.name).join(", ")}`}
-          </p>
+      <div className="modelo-card">
+        <div className="modelo-card-topo">
+          <div className="modelo-card-titulo static">
+            <span className="modelo-nome">{user.name}</span>
+            <span className="modelo-usuario">@{user.username}</span>
+          </div>
+          <div className="list-item-actions">
+            {user.profile !== "master" && (
+              <>
+                <button className="btn-small" type="button" onClick={() => setEditing(true)}>
+                  Editar
+                </button>
+                <DeleteButton action={deleteUser} id={user.id} confirmText={`Deletar o usuário "${user.name}"?`} />
+              </>
+            )}
+          </div>
         </div>
-        <div className="list-item-actions">
-          {user.profile !== "master" && (
-            <>
-              <button
-                className="btn-small"
-                type="button"
-                onClick={() => setEditing(true)}
-              >
-                Editar
-              </button>
-              <DeleteButton
-                action={deleteUser}
-                id={user.id}
-                confirmText={`Deletar o usuário "${user.name}"?`}
-              />
-            </>
+        <div className="modelo-badges sem-recuo">
+          <span className="modelo-badge daily">{PROFILE_LABELS[user.profile] ?? user.profile}</span>
+          <span className="modelo-badge">{user.jobFunctionName ?? "Sem função"}</span>
+          {!user.checklistObrigatorio && <span className="modelo-badge">sem checklist obrigatório</span>}
+          {user.folgaDias.length > 0 && (
+            <span className="modelo-badge">folga: {user.folgaDias.slice().sort((a, b) => a - b).map((d) => DIAS[d]).join(", ")}</span>
           )}
+          {extras.length > 0 && <span className="modelo-badge">requisições também de {extras.join(", ")}</span>}
         </div>
       </div>
     );

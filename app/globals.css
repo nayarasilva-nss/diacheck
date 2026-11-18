@@ -3184,3 +3184,14 @@ a.plano-item { display: block; }
 .modelo-versao-nome { font-weight: 700; flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; }
 .modelo-versao-novo { display: flex; flex-wrap: wrap; gap: 8px; }
 .modelo-versao-novo select { flex: 1 1 200px; min-width: 0; }
+
+.modelo-card-titulo.static { cursor: default; flex-wrap: wrap; }
+.modelo-usuario { color: var(--text-faint); font-size: 13px; }
+.modelo-badges.sem-recuo { margin-left: 0; }
+.modelo-card.compacto { padding: 4px 12px; }
+.modelos-toolbar .btn-small[aria-expanded="true"] { border-color: var(--kenkyo-red); color: var(--kenkyo-on-tint); }
+.grupo-recolhivel > summary { cursor: pointer; list-style: none; min-height: 32px; }
+.grupo-recolhivel > summary::-webkit-details-marker { display: none; }
+.grupo-recolhivel > summary::before { content: "▸"; color: var(--text-faint); margin-right: 6px; }
+.grupo-recolhivel[open] > summary::before { content: "▾"; }
+.modelos-grupo-titulo .link-btn { margin-left: auto; text-transform: none; letter-spacing: 0; }

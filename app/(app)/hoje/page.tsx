@@ -18,6 +18,9 @@ import { canSubmitFilleting } from "@/lib/data/filleting";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
 import { tiposPermitidos } from "@/lib/auth/requisicoes";
 import { getRecebimentosComDiferenca } from "@/lib/data/requisicoes";
+import { getPendenciasDaLoja } from "@/lib/data/pendencias-loja";
+import { unidadeDaContagem } from "@/lib/data/contagem";
+import { canFecharCaixa } from "@/lib/auth/caixa";
 import { getAtrasosHoje } from "@/lib/data/painel";
 import { getMinhasRotinas } from "@/lib/data/rotinas";
 import { getUnits, resolveUnitScope } from "@/lib/data/units";
@@ -77,6 +80,11 @@ export default async function HojePage({
   ]);
   const unitName = units.find((u) => u.id === user.unitId)?.name ?? null;
   const rotinasHoje = isRh ? [] : (await getMinhasRotinas(user.id)).filter((r) => r.aplicaHoje);
+  // o que a loja deve hoje (caixa de ontem, requisições sem conferir, ocorrências paradas): para quem cobra a loja
+  const cobraLoja = user.profile === "gerente" || user.profile === "lider";
+  const lojaDoDia = cobraLoja ? (await unidadeDaContagem(user, effectiveUnitId)).unidade : null;
+  const pendLoja = cobraLoja ? await getPendenciasDaLoja(lojaDoDia ? { id: lojaDoDia.id, cnpj: lojaDoDia.cnpj } : null, user.organizationId!, canFecharCaixa(user)) : null;
+  const temPendLoja = !!pendLoja && (pendLoja.caixaOntem || pendLoja.requisicoes > 0 || pendLoja.ocorrencias > 0);
 
   const [pendencias, painelStats, ranking, filletingSummary, restoIngestaSummary, missingChecklist] =
     await Promise.all([
@@ -118,6 +126,26 @@ export default async function HojePage({
 
       <div className="hoje-layout">
         <div className="hoje-column">
+          {temPendLoja && pendLoja && (
+            <div className="tone-card warn" style={{ marginBottom: 16 }}>
+              <div className="tone-label">Pendências da loja</div>
+              {pendLoja.caixaOntem && (
+                <Link href={`/caixa?data=${pendLoja.ontem}`} className="quick-action-row">
+                  <span>O caixa de ontem não foi enviado</span><span>Fechar →</span>
+                </Link>
+              )}
+              {pendLoja.requisicoes > 0 && (
+                <Link href="/requisicoes" className="quick-action-row">
+                  <span>{pendLoja.requisicoes} requisiç{pendLoja.requisicoes === 1 ? "ão" : "ões"} sem conferir</span><span>Conferir →</span>
+                </Link>
+              )}
+              {pendLoja.ocorrencias > 0 && (
+                <Link href="/anomalias" className="quick-action-row">
+                  <span>{pendLoja.ocorrencias} ocorrência{pendLoja.ocorrencias === 1 ? "" : "s"} aberta{pendLoja.ocorrencias === 1 ? "" : "s"} há mais de 3 dias</span><span>Tratar →</span>
+                </Link>
+              )}
+            </div>
+          )}
           {atrasos.length > 0 && (
             <div className="tone-card bad" style={{ marginBottom: 16 }}>
               <div className="tone-label">Checklists em atraso · {atrasos.length}</div>

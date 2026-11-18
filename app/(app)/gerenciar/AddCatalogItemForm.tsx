@@ -7,10 +7,14 @@ const UNIT_MEASURES = ["kg", "g", "un", "L", "ml", "cx", "pct"] as const;
 
 export function AddCatalogItemForm({
   categories,
+  startOpen = false,
+  onDone,
 }: {
+  startOpen?: boolean;
+  onDone?: () => void;
   categories: { id: number; name: string }[];
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -34,6 +38,7 @@ export function AddCatalogItemForm({
         setError(undefined);
         setOpen(false);
         formRef.current?.reset();
+        onDone?.();
       }
     });
   }
@@ -68,7 +73,7 @@ export function AddCatalogItemForm({
       </div>
       {error && <p className="login-error">{error}</p>}
       <div className="inline-form-buttons">
-        <button type="button" className="btn-cancel" onClick={() => setOpen(false)}>
+        <button type="button" className="btn-cancel" onClick={() => { setOpen(false); onDone?.(); }}>
           Cancelar
         </button>
         <button className="btn-save" type="submit" disabled={isPending}>

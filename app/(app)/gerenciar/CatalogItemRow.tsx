@@ -27,22 +27,18 @@ export function CatalogItemRow({
 
   if (!editing) {
     return (
-      <div className="list-item">
-        <div className="info">
-          <h4>{item.name}</h4>
-          <p>
-            {item.categoryName ?? "Sem categoria"} • {item.unitMeasure}
-          </p>
-        </div>
-        <div className="list-item-actions">
-          <button className="btn-small" type="button" onClick={() => setEditing(true)}>
-            Editar
-          </button>
-          <DeleteButton
-            action={deleteCatalogItem}
-            id={item.id}
-            confirmText={`Deletar o produto "${item.name}"?`}
-          />
+      <div className="modelo-card compacto">
+        <div className="modelo-card-topo">
+          <div className="modelo-card-titulo static">
+            <span className="modelo-nome">{item.name}</span>
+            <span className="modelo-badge">{item.unitMeasure}</span>
+          </div>
+          <div className="list-item-actions">
+            <button className="btn-small" type="button" onClick={() => setEditing(true)}>
+              Editar
+            </button>
+            <DeleteButton action={deleteCatalogItem} id={item.id} confirmText={`Deletar o produto "${item.name}"?`} />
+          </div>
         </div>
       </div>
     );
